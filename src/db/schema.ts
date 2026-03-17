@@ -94,10 +94,27 @@ export const memories = pgTable('memories', {
   reviewedBy: text('reviewed_by'),
   reviewedAt: timestamp('reviewed_at'),
   hidePreciseLocation: boolean('hide_precise_location').notNull().default(false),
+  institutionName: text('institution_name'),
+  reviewerAssignedTo: text('reviewer_assigned_to'),
+  reviewerAssignedAt: timestamp('reviewer_assigned_at'),
+  moderationDecisionNote: text('moderation_decision_note'),
+  importBatchId: text('import_batch_id'),
   visibility: memoryVisibilityEnum('visibility').notNull().default('PRIVATE'),
   status: memoryStatusEnum('status').notNull().default('DRAFT'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const moderationAuditLogs = pgTable('moderation_audit_logs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id),
+  memoryId: uuid('memory_id').references(() => memories.id).notNull(),
+  action: text('action').notNull(),
+  actorName: text('actor_name'),
+  reviewerAssignedTo: text('reviewer_assigned_to'),
+  institutionName: text('institution_name'),
+  note: text('note'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
 export const relationships = pgTable('relationships', {

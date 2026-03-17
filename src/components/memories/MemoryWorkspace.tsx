@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Globe2, MapPinned, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FamilyAtlas } from "@/components/memories/FamilyAtlas";
+import { InstitutionalWorkflow } from "@/components/memories/InstitutionalWorkflow";
 import { MemoryMap } from "@/components/memories/MemoryMap";
 import { MemoryTimeline } from "@/components/memories/MemoryTimeline";
 import { memoryClientApi } from "@/features/memories/client";
@@ -810,6 +811,8 @@ export function MemoryWorkspace({
       />
 
       <FamilyAtlas memories={memories} />
+
+      <InstitutionalWorkflow memories={memories} onRefreshMemories={refreshMemories} />
 
       <div className="glass-panel rounded-[2rem] p-6">
         <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-5">

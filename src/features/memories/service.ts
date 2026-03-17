@@ -42,6 +42,11 @@ export function validateMemoryInput(input: CreateMemoryInput): ValidationResult 
   const respectfulHandlingNotes = input.respectfulHandlingNotes?.trim() || "";
   const reviewedBy = input.reviewedBy?.trim() || "";
   const reviewedAt = input.reviewedAt?.trim() || "";
+  const institutionName = input.institutionName?.trim() || "";
+  const reviewerAssignedTo = input.reviewerAssignedTo?.trim() || "";
+  const reviewerAssignedAt = input.reviewerAssignedAt?.trim() || "";
+  const moderationDecisionNote = input.moderationDecisionNote?.trim() || "";
+  const importBatchId = input.importBatchId?.trim() || "";
   const isSensitiveRecord = input.sensitivity !== "STANDARD" || input.type === "BURIAL";
 
   if (!title) {
@@ -94,6 +99,10 @@ export function validateMemoryInput(input: CreateMemoryInput): ValidationResult 
     errors.reviewedAt = "Reviewed at must be a valid date.";
   }
 
+  if (reviewerAssignedAt && Number.isNaN(Date.parse(reviewerAssignedAt))) {
+    errors.reviewerAssignedAt = "Reviewer assigned at must be a valid date.";
+  }
+
   if (Object.keys(errors).length > 0) {
     return { value: null, errors };
   }
@@ -111,6 +120,11 @@ export function validateMemoryInput(input: CreateMemoryInput): ValidationResult 
       respectfulHandlingNotes,
       reviewedBy,
       reviewedAt,
+      institutionName,
+      reviewerAssignedTo,
+      reviewerAssignedAt,
+      moderationDecisionNote,
+      importBatchId,
       metadata: personName ? { personName } : null,
     },
     errors,
@@ -293,6 +307,13 @@ export async function createMemoryRecord(
     reviewed_by: value.reviewedBy || null,
     reviewed_at: value.reviewedAt ? new Date(value.reviewedAt).toISOString() : null,
     hide_precise_location: value.hidePreciseLocation,
+    institution_name: value.institutionName || null,
+    reviewer_assigned_to: value.reviewerAssignedTo || null,
+    reviewer_assigned_at: value.reviewerAssignedAt
+      ? new Date(value.reviewerAssignedAt).toISOString()
+      : null,
+    moderation_decision_note: value.moderationDecisionNote || null,
+    import_batch_id: value.importBatchId || null,
     visibility: value.visibility,
     status: value.status,
   };
@@ -358,6 +379,13 @@ export async function updateMemoryRecord(
     reviewed_by: value.reviewedBy || null,
     reviewed_at: value.reviewedAt ? new Date(value.reviewedAt).toISOString() : null,
     hide_precise_location: value.hidePreciseLocation,
+    institution_name: value.institutionName || null,
+    reviewer_assigned_to: value.reviewerAssignedTo || null,
+    reviewer_assigned_at: value.reviewerAssignedAt
+      ? new Date(value.reviewerAssignedAt).toISOString()
+      : null,
+    moderation_decision_note: value.moderationDecisionNote || null,
+    import_batch_id: value.importBatchId || null,
     visibility: value.visibility,
     status: value.status,
   };
@@ -407,6 +435,11 @@ function mapDatabaseRecord(record: DatabaseMemoryRecord): MemoryRecord {
     reviewedBy: record.reviewed_by,
     reviewedAt: record.reviewed_at,
     hidePreciseLocation: Boolean(record.hide_precise_location),
+    institutionName: record.institution_name ?? null,
+    reviewerAssignedTo: record.reviewer_assigned_to ?? null,
+    reviewerAssignedAt: record.reviewer_assigned_at ?? null,
+    moderationDecisionNote: record.moderation_decision_note ?? null,
+    importBatchId: record.import_batch_id ?? null,
     createdAt: record.created_at,
     updatedAt: record.updated_at,
   };
@@ -443,6 +476,9 @@ function applyMemoryFilters(records: MemoryRecord[], options?: MemoryListFilters
         record.sourceNotes,
         record.reviewNotes,
         record.respectfulHandlingNotes,
+        record.institutionName,
+        record.reviewerAssignedTo,
+        record.moderationDecisionNote,
       ]
         .filter(Boolean)
         .join(" ")

@@ -55,6 +55,11 @@ export type MemoryRecord = {
   reviewedBy: string | null;
   reviewedAt: string | null;
   hidePreciseLocation: boolean;
+  institutionName?: string | null;
+  reviewerAssignedTo?: string | null;
+  reviewerAssignedAt?: string | null;
+  moderationDecisionNote?: string | null;
+  importBatchId?: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -90,6 +95,11 @@ export type CreateMemoryInput = {
   reviewedBy?: string;
   reviewedAt?: string;
   hidePreciseLocation: boolean;
+  institutionName?: string;
+  reviewerAssignedTo?: string;
+  reviewerAssignedAt?: string;
+  moderationDecisionNote?: string;
+  importBatchId?: string;
   userId: string;
 };
 
@@ -121,6 +131,11 @@ export type DatabaseMemoryRecord = {
   reviewed_by: string | null;
   reviewed_at: string | null;
   hide_precise_location: boolean | null;
+  institution_name?: string | null;
+  reviewer_assigned_to?: string | null;
+  reviewer_assigned_at?: string | null;
+  moderation_decision_note?: string | null;
+  import_batch_id?: string | null;
   visibility: MemoryVisibility;
   status: MemoryStatus;
   created_at: string;
