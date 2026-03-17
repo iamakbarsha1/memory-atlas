@@ -74,6 +74,7 @@ export const memories = pgTable('memories', {
   id: uuid('id').primaryKey().defaultRandom(),
   title: text('title').notNull(),
   description: text('description'),
+  placeName: text('place_name').notNull(),
   layer: memoryLayerEnum('layer').notNull(),
   type: memoryTypeEnum('type').notNull(),
   latitude: decimal('latitude', { precision: 10, scale: 7 }).notNull(),

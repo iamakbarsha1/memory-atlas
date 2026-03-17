@@ -53,7 +53,7 @@ describe("institutionalWorkflowClientApi", () => {
     });
 
     await institutionalWorkflowClientApi.importCsv({
-      csvText: "title,description\nExample,Test",
+      csvText: "title,description,placeName\nExample,Test,Chennai",
       institutionName: "Museum",
       actorName: "Archivist",
       reviewerAssignedTo: "Lead Archivist",
@@ -66,7 +66,7 @@ describe("institutionalWorkflowClientApi", () => {
         Authorization: "Bearer token-123",
       },
       body: JSON.stringify({
-        csvText: "title,description\nExample,Test",
+        csvText: "title,description,placeName\nExample,Test,Chennai",
         institutionName: "Museum",
         actorName: "Archivist",
         reviewerAssignedTo: "Lead Archivist",

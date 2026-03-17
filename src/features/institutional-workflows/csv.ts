@@ -4,6 +4,7 @@ import type { InstitutionalExportRow } from "./types";
 const exportHeaders = [
   "title",
   "description",
+  "placeName",
   "layer",
   "type",
   "latitude",
@@ -31,6 +32,7 @@ export function buildInstitutionalExportCsv(memories: MemoryRecord[]) {
   const rows = memories.map<InstitutionalExportRow>((memory) => ({
     title: memory.title,
     description: memory.description ?? "",
+    placeName: memory.placeName,
     layer: memory.layer,
     type: memory.type,
     latitude: memory.latitude,
@@ -89,6 +91,7 @@ export function parseInstitutionalCsv(text: string) {
     rows.push({
       title: row.title ?? "",
       description: row.description ?? "",
+      placeName: row.placeName ?? "",
       layer: (row.layer as InstitutionalExportRow["layer"]) ?? "HOME",
       type: (row.type as InstitutionalExportRow["type"]) ?? "HOME",
       latitude: Number(row.latitude ?? Number.NaN),

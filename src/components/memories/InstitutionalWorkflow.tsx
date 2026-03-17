@@ -331,7 +331,7 @@ export function InstitutionalWorkflow({
               value={csvText}
               onChange={(event) => setCsvText(event.target.value)}
               className="mt-4 min-h-44 w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 font-mono text-xs text-white outline-none transition focus:border-primary"
-              placeholder="title,description,layer,type,latitude,longitude,dateOccurred,personName,visibility,status,sourceType,sourceName,sourceUrl,sourceNotes,trustLabel,sensitivity,reviewNotes,respectfulHandlingNotes,hidePreciseLocation,institutionName,reviewerAssignedTo"
+              placeholder="title,description,placeName,layer,type,latitude,longitude,dateOccurred,personName,visibility,status,sourceType,sourceName,sourceUrl,sourceNotes,trustLabel,sensitivity,reviewNotes,respectfulHandlingNotes,hidePreciseLocation,institutionName,reviewerAssignedTo"
             />
             <button
               type="submit"

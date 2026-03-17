@@ -36,6 +36,7 @@ export type MemoryRecord = {
   id: string;
   title: string;
   description: string | null;
+  placeName: string;
   layer: MemoryLayer;
   type: MemoryType;
   latitude: number;
@@ -76,6 +77,7 @@ export type MemoryListFilters = {
 export type CreateMemoryInput = {
   title: string;
   description?: string;
+  placeName: string;
   layer: MemoryLayer;
   type: MemoryType;
   latitude: number;
@@ -111,6 +113,7 @@ export type DatabaseMemoryRecord = {
   id: string;
   title: string;
   description: string | null;
+  place_name?: string | null;
   layer: MemoryLayer;
   type: MemoryType;
   latitude: string | number;

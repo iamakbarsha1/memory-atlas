@@ -34,6 +34,7 @@ export function validateMemoryInput(input: CreateMemoryInput): ValidationResult 
   const errors: ValidationErrors = {};
   const title = input.title.trim();
   const description = input.description?.trim() || "";
+  const placeName = input.placeName.trim();
   const sourceName = input.sourceName.trim();
   const sourceUrl = input.sourceUrl?.trim() || "";
   const sourceNotes = input.sourceNotes?.trim() || "";
@@ -55,6 +56,10 @@ export function validateMemoryInput(input: CreateMemoryInput): ValidationResult 
 
   if (!sourceName) {
     errors.sourceName = "Source name is required.";
+  }
+
+  if (!placeName) {
+    errors.placeName = "Place name is required.";
   }
 
   if (!Number.isFinite(input.latitude) || input.latitude < -90 || input.latitude > 90) {
@@ -112,6 +117,7 @@ export function validateMemoryInput(input: CreateMemoryInput): ValidationResult 
       ...input,
       title,
       description,
+      placeName,
       sourceName,
       sourceUrl,
       sourceNotes,
@@ -287,6 +293,7 @@ export async function createMemoryRecord(
   const payload = {
     title: value.title,
     description: value.description || null,
+    place_name: value.placeName,
     layer: value.layer,
     type: value.type,
     latitude: value.latitude.toString(),
@@ -360,6 +367,7 @@ export async function updateMemoryRecord(
   const payload = {
     title: value.title,
     description: value.description || null,
+    place_name: value.placeName,
     layer: value.layer,
     type: value.type,
     latitude: value.latitude.toString(),
@@ -416,6 +424,7 @@ function mapDatabaseRecord(record: DatabaseMemoryRecord): MemoryRecord {
     id: record.id,
     title: record.title,
     description: record.description,
+    placeName: record.place_name ?? "Unknown place",
     layer: record.layer,
     type: record.type,
     latitude: Number(record.latitude),
@@ -471,6 +480,7 @@ function applyMemoryFilters(records: MemoryRecord[], options?: MemoryListFilters
       const haystack = [
         record.title,
         record.description,
+        record.placeName,
         record.personName,
         record.sourceName,
         record.sourceNotes,

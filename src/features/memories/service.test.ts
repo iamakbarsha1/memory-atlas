@@ -12,6 +12,7 @@ import type { CreateMemoryInput, DatabaseMemoryRecord } from "./types";
 const baseInput: CreateMemoryInput = {
   title: "  Khan Family Home  ",
   description: "  Three generations lived here. ",
+  placeName: "  Chennai  ",
   layer: "HOME",
   type: "HOME",
   latitude: 13.0827,
@@ -37,6 +38,7 @@ const dbRecord: DatabaseMemoryRecord = {
   id: "memory-1",
   title: "Khan Family Home",
   description: "Three generations lived here.",
+  place_name: "Chennai",
   layer: "HOME",
   type: "HOME",
   latitude: "13.0827",
@@ -80,6 +82,7 @@ describe("validateMemoryInput", () => {
     expect(result.value).toMatchObject({
       title: "Khan Family Home",
       description: "Three generations lived here.",
+      placeName: "Chennai",
       sourceName: "Oral history interview",
       sourceNotes: "Recorded in 2024",
       trustLabel: "FAMILY_CONFIRMED",
@@ -100,6 +103,18 @@ describe("validateMemoryInput", () => {
       latitude: "Latitude must be between -90 and 90.",
       longitude: "Longitude must be between -180 and 180.",
       sourceUrl: "Source URL must be a valid URL.",
+    });
+  });
+
+  it("requires place name", () => {
+    const result = validateMemoryInput({
+      ...baseInput,
+      placeName: " ",
+    });
+
+    expect(result.value).toBeNull();
+    expect(result.errors).toMatchObject({
+      placeName: "Place name is required.",
     });
   });
 
@@ -134,6 +149,7 @@ describe("createMemoryRecord", () => {
     expect(repository.create).toHaveBeenCalledWith(
       expect.objectContaining({
         title: "Khan Family Home",
+        place_name: "Chennai",
         metadata: { personName: "Amina Khan" },
         source_name: "Oral history interview",
         visibility: "FAMILY",

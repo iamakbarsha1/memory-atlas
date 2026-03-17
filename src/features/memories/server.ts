@@ -117,6 +117,7 @@ export async function createMemoryForRequest(
     {
       title: body.title ?? "",
       description: body.description,
+      placeName: body.placeName ?? "",
       layer: (body.layer as CreateMemoryInput["layer"]) ?? "BURIAL",
       type: (body.type as CreateMemoryInput["type"]) ?? "BURIAL",
       latitude: Number(body.latitude ?? Number.NaN),
@@ -196,6 +197,7 @@ export async function updateMemoryForRequest(
       id: request.memoryId,
       title: body.title ?? "",
       description: body.description,
+      placeName: body.placeName ?? "",
       layer: (body.layer as UpdateMemoryInput["layer"]) ?? "BURIAL",
       type: (body.type as UpdateMemoryInput["type"]) ?? "BURIAL",
       latitude: Number(body.latitude ?? Number.NaN),

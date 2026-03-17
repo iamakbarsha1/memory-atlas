@@ -8,6 +8,7 @@ describe("institutional workflow csv helpers", () => {
         id: "memory-1",
         title: "Campus Memory",
         description: "Library steps",
+        placeName: "Chennai",
         layer: "EDUCATION",
         type: "EDUCATION",
         latitude: 13.08,
@@ -37,19 +38,20 @@ describe("institutional workflow csv helpers", () => {
       },
     ]);
 
-    expect(csv).toContain("title,description,layer,type");
+    expect(csv).toContain("title,description,placeName,layer,type");
     expect(csv).toContain("Campus Memory");
   });
 
   it("parses an import csv row", () => {
     const result = parseInstitutionalCsv(
-      "title,description,layer,type,latitude,longitude,dateOccurred,personName,visibility,status,sourceType,sourceName,sourceUrl,sourceNotes,trustLabel,sensitivity,reviewNotes,respectfulHandlingNotes,hidePreciseLocation,institutionName,reviewerAssignedTo\n" +
-        "Campus Memory,Library steps,EDUCATION,EDUCATION,13.08,80.27,1998-06-01,Amina Khan,FAMILY,REVIEW,INSTITUTION,University archive,,Catalogued,INSTITUTION_CONFIRMED,STANDARD,Ready for review,,false,University Archive,Lead Archivist",
+      "title,description,placeName,layer,type,latitude,longitude,dateOccurred,personName,visibility,status,sourceType,sourceName,sourceUrl,sourceNotes,trustLabel,sensitivity,reviewNotes,respectfulHandlingNotes,hidePreciseLocation,institutionName,reviewerAssignedTo\n" +
+        "Campus Memory,Library steps,Chennai,EDUCATION,EDUCATION,13.08,80.27,1998-06-01,Amina Khan,FAMILY,REVIEW,INSTITUTION,University archive,,Catalogued,INSTITUTION_CONFIRMED,STANDARD,Ready for review,,false,University Archive,Lead Archivist",
     );
 
     expect(result.error).toBeNull();
     expect(result.rows[0]).toMatchObject({
       title: "Campus Memory",
+      placeName: "Chennai",
       reviewerAssignedTo: "Lead Archivist",
       institutionName: "University Archive",
     });

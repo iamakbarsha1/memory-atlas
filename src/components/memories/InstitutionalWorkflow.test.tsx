@@ -7,6 +7,7 @@ const memories = [
     id: "memory-1",
     title: "Campus Memory",
     description: "Library steps",
+    placeName: "Chennai",
     layer: "EDUCATION",
     type: "EDUCATION",
     latitude: 13.08,
@@ -107,8 +108,8 @@ describe("InstitutionalWorkflow", () => {
     fireEvent.change(screen.getByLabelText(/Institutional import csv/i), {
       target: {
         value:
-          "title,description,layer,type,latitude,longitude,dateOccurred,personName,visibility,status,sourceType,sourceName,sourceUrl,sourceNotes,trustLabel,sensitivity,reviewNotes,respectfulHandlingNotes,hidePreciseLocation,institutionName,reviewerAssignedTo\n" +
-          "Library Opening,Main campus library,HISTORY,HISTORY,13.08,80.27,1998-06-01,Amina Khan,FAMILY,REVIEW,INSTITUTION,University archive,,Catalog,INSTITUTION_CONFIRMED,STANDARD,Ready for review,,false,University Archive,Lead Archivist",
+          "title,description,placeName,layer,type,latitude,longitude,dateOccurred,personName,visibility,status,sourceType,sourceName,sourceUrl,sourceNotes,trustLabel,sensitivity,reviewNotes,respectfulHandlingNotes,hidePreciseLocation,institutionName,reviewerAssignedTo\n" +
+          "Library Opening,Main campus library,Chennai,HISTORY,HISTORY,13.08,80.27,1998-06-01,Amina Khan,FAMILY,REVIEW,INSTITUTION,University archive,,Catalog,INSTITUTION_CONFIRMED,STANDARD,Ready for review,,false,University Archive,Lead Archivist",
       },
     });
     fireEvent.click(screen.getByRole("button", { name: /Import CSV Batch/i }));

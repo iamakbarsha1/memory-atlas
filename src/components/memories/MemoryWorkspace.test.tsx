@@ -11,6 +11,7 @@ function makeMemory(overrides: Record<string, unknown> = {}) {
     id: "1",
     title: "Khan Family Home",
     description: "Chennai",
+    placeName: "Chennai",
     layer: "HOME",
     type: "HOME",
     latitude: 13.0827,
@@ -187,6 +188,7 @@ describe("MemoryWorkspace", () => {
             id: "1",
             title: "Grandfather Burial Plot",
             description: "Section B",
+            placeName: "Dubai",
             layer: "BURIAL",
             type: "BURIAL",
             latitude: 25.2048,
@@ -227,6 +229,9 @@ describe("MemoryWorkspace", () => {
     fireEvent.change(screen.getByLabelText(/Person Label/i), {
       target: { value: "Yusuf Khan" },
     });
+    fireEvent.change(screen.getByLabelText(/Place Name/i), {
+      target: { value: "Dubai" },
+    });
     fireEvent.change(screen.getByLabelText(/Latitude/i), {
       target: { value: "25.2048" },
     });
@@ -256,6 +261,7 @@ describe("MemoryWorkspace", () => {
       expect(createMemory).toHaveBeenCalledWith(
         expect.objectContaining({
           title: "Grandfather Burial Plot",
+          placeName: "Dubai",
           trustLabel: "FAMILY_CONFIRMED",
           sensitivity: "MEMORIAL",
           hidePreciseLocation: true,
@@ -264,6 +270,7 @@ describe("MemoryWorkspace", () => {
       );
     });
     await screen.findByRole("button", { name: /Edit Grandfather Burial Plot/i });
+    expect(screen.getAllByRole("link", { name: /Open Place Hub/i }).some((link) => link.getAttribute("href") === "/places/dubai")).toBe(true);
   });
 
   it("loads a record into the form and saves edits", async () => {

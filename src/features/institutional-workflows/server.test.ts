@@ -11,6 +11,7 @@ function makeMemoryRecord(overrides: Record<string, unknown> = {}) {
     id: "memory-1",
     title: "Campus Memory",
     description: "Library steps",
+    place_name: "Chennai",
     layer: "EDUCATION",
     type: "EDUCATION",
     latitude: "13.08",
@@ -147,8 +148,8 @@ describe("importCsvForRequest", () => {
           institutionName: "University Archive",
           reviewerAssignedTo: "Lead Archivist",
           csvText:
-            "title,description,layer,type,latitude,longitude,dateOccurred,personName,visibility,status,sourceType,sourceName,sourceUrl,sourceNotes,trustLabel,sensitivity,reviewNotes,respectfulHandlingNotes,hidePreciseLocation,institutionName,reviewerAssignedTo\n" +
-            "Library Opening,Main campus library,HISTORY,HISTORY,13.08,80.27,1998-06-01,Amina Khan,FAMILY,REVIEW,INSTITUTION,University archive,,Catalog,FAMILY_CONFIRMED,STANDARD,Imported review,,false,University Archive,Lead Archivist",
+            "title,description,placeName,layer,type,latitude,longitude,dateOccurred,personName,visibility,status,sourceType,sourceName,sourceUrl,sourceNotes,trustLabel,sensitivity,reviewNotes,respectfulHandlingNotes,hidePreciseLocation,institutionName,reviewerAssignedTo\n" +
+            "Library Opening,Main campus library,Chennai,HISTORY,HISTORY,13.08,80.27,1998-06-01,Amina Khan,FAMILY,REVIEW,INSTITUTION,University archive,,Catalog,FAMILY_CONFIRMED,STANDARD,Imported review,,false,University Archive,Lead Archivist",
         },
       },
       deps,

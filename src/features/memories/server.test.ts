@@ -21,6 +21,7 @@ function createDeps(): MemoryRequestDeps {
           id: "memory-1",
           title: "Khan Family Home",
           description: "Three generations lived here.",
+          place_name: "Chennai",
           layer: "HOME",
           type: "HOME",
           latitude: "13.08",
@@ -57,6 +58,7 @@ function createDeps(): MemoryRequestDeps {
           id: "memory-1",
           title: "Updated title",
           description: "Three generations lived here.",
+          place_name: "Chennai",
           layer: "HOME",
           type: "HOME",
           latitude: "13.08",
@@ -149,6 +151,7 @@ describe("createMemoryForRequest", () => {
         authorizationHeader: "Bearer token-123",
         body: {
           title: "Khan Family Home",
+          placeName: "Chennai",
           layer: "HOME",
           type: "HOME",
           latitude: 13.08,
@@ -183,6 +186,7 @@ describe("createMemoryForRequest", () => {
         authorizationHeader: "Bearer token-123",
         body: {
           title: "",
+          placeName: "",
           layer: "HOME",
           type: "HOME",
           latitude: 13.08,
@@ -203,6 +207,7 @@ describe("createMemoryForRequest", () => {
     expect(result.status).toBe(400);
     expect(result.body.validationErrors).toMatchObject({
       title: "Title is required.",
+      placeName: "Place name is required.",
       sourceName: "Source name is required.",
     });
   });
@@ -218,6 +223,7 @@ describe("updateMemoryForRequest", () => {
         memoryId: "memory-1",
         body: {
           title: "Updated title",
+          placeName: "Chennai",
           layer: "HOME",
           type: "HOME",
           latitude: 13.08,

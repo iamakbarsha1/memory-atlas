@@ -45,6 +45,7 @@ describe("memoryClientApi", () => {
 
     const result = await memoryClientApi.createMemory({
       title: "Test memory",
+      placeName: "Chennai",
       layer: "HOME",
       type: "HOME",
       latitude: 13.08,
@@ -75,6 +76,7 @@ describe("memoryClientApi", () => {
     await memoryClientApi.updateMemory({
       id: "memory-1",
       title: "Updated memory",
+      placeName: "Chennai",
       layer: "HOME",
       type: "HOME",
       latitude: 13.08,
@@ -100,6 +102,7 @@ describe("memoryClientApi", () => {
       },
       body: JSON.stringify({
         title: "Updated memory",
+        placeName: "Chennai",
         layer: "HOME",
         type: "HOME",
         latitude: 13.08,

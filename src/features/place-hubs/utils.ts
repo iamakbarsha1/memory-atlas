@@ -17,7 +17,7 @@ export function buildPlaceHubs(memories: MemoryRecord[]) {
   const grouped = new Map<string, MemoryRecord[]>();
 
   for (const memory of memories) {
-    const placeName = inferPlaceName(memory);
+    const placeName = memory.placeName.trim();
     const slug = slugifyPlaceName(placeName);
     const current = grouped.get(slug) ?? [];
     current.push(memory);
@@ -26,7 +26,7 @@ export function buildPlaceHubs(memories: MemoryRecord[]) {
 
   return Array.from(grouped.entries())
     .map<PlaceHub>(([slug, records]) => {
-      const placeName = inferPlaceName(records[0]);
+      const placeName = records[0].placeName;
       const layers = Array.from(new Set(records.map((record) => record.layer))).sort();
       const peopleCount = new Set(
         records.map((record) => record.personName?.trim()).filter((value): value is string => Boolean(value)),
@@ -63,21 +63,7 @@ export function slugifyPlaceName(placeName: string) {
 }
 
 export function inferPlaceName(memory: MemoryRecord) {
-  const description = memory.description?.trim() ?? "";
-
-  if (description && description.length <= 40 && !description.includes(".") && !description.includes("Context")) {
-    return description;
-  }
-
-  if (memory.institutionName?.trim()) {
-    return memory.institutionName.trim();
-  }
-
-  if (memory.sourceType === "INSTITUTION" || memory.sourceType === "HISTORICAL") {
-    return memory.sourceName;
-  }
-
-  return `Place ${memory.latitude.toFixed(2)}, ${memory.longitude.toFixed(2)}`;
+  return memory.placeName;
 }
 
 export const demoPlaceMemories: MemoryRecord[] = [
@@ -85,6 +71,7 @@ export const demoPlaceMemories: MemoryRecord[] = [
     id: "demo-place-1",
     title: "Family Home Registry",
     description: "Chennai",
+    placeName: "Chennai",
     layer: "HOME",
     type: "HOME",
     latitude: 13.0827,
@@ -116,6 +103,7 @@ export const demoPlaceMemories: MemoryRecord[] = [
     id: "demo-place-2",
     title: "University Years",
     description: "Chennai",
+    placeName: "Chennai",
     layer: "EDUCATION",
     type: "EDUCATION",
     latitude: 13.0674,
@@ -147,6 +135,7 @@ export const demoPlaceMemories: MemoryRecord[] = [
     id: "demo-place-3",
     title: "Birthplace Record",
     description: "Madurai",
+    placeName: "Madurai",
     layer: "HISTORY",
     type: "BIRTH",
     latitude: 9.9252,
@@ -178,6 +167,7 @@ export const demoPlaceMemories: MemoryRecord[] = [
     id: "demo-place-4",
     title: "Memorial Registry",
     description: "Dubai",
+    placeName: "Dubai",
     layer: "BURIAL",
     type: "BURIAL",
     latitude: 25.2048,

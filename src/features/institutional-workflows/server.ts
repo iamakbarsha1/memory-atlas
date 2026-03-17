@@ -307,6 +307,7 @@ export async function importCsvForRequest(
       {
         ...row,
         description: row.description || undefined,
+        placeName: row.placeName || row.sourceName || "Imported place",
         dateOccurred: row.dateOccurred || undefined,
         personName: row.personName || undefined,
         sourceUrl: row.sourceUrl || undefined,

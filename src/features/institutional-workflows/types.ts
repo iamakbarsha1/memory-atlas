@@ -49,6 +49,7 @@ export type InstitutionalExportRow = Pick<
   CreateMemoryInput,
   | "title"
   | "description"
+  | "placeName"
   | "layer"
   | "type"
   | "latitude"

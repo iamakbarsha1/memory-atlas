@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Globe2, MapPinned, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { MemoryMap } from "@/components/memories/MemoryMap";
 import { PartnerDashboard } from "@/components/memories/PartnerDashboard";
 import { MemoryTimeline } from "@/components/memories/MemoryTimeline";
 import { memoryClientApi } from "@/features/memories/client";
+import { slugifyPlaceName } from "@/features/place-hubs/utils";
 import {
   memoryLayerValues,
   memorySensitivityValues,
@@ -59,6 +61,7 @@ const trustTone = {
 const initialFormState: Omit<CreateMemoryInput, "userId"> = {
   title: "",
   description: "",
+  placeName: "",
   layer: "BURIAL",
   type: "BURIAL",
   latitude: 0,
@@ -270,6 +273,7 @@ export function MemoryWorkspace({
     setForm({
       title: memory.title,
       description: memory.description ?? "",
+      placeName: memory.placeName,
       layer: memory.layer,
       type: memory.type,
       latitude: memory.latitude,
@@ -506,6 +510,16 @@ export function MemoryWorkspace({
               onChange={(event) => handleFieldChange("personName", event.target.value)}
               className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-primary"
               placeholder="Yusuf Khan"
+            />
+          </Field>
+
+          <Field label="Place Name" error={fieldErrors.placeName}>
+            <input
+              aria-label="Place Name"
+              value={form.placeName}
+              onChange={(event) => handleFieldChange("placeName", event.target.value)}
+              className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-primary"
+              placeholder="Chennai"
             />
           </Field>
 
@@ -903,7 +917,7 @@ export function MemoryWorkspace({
                   <div className="mt-4 grid gap-3 text-sm text-white/70 sm:grid-cols-2">
                     <div className="flex items-center gap-2">
                       <MapPinned className="h-4 w-4 text-primary" />
-                      {memory.latitude.toFixed(4)}, {memory.longitude.toFixed(4)}
+                      {memory.placeName}
                     </div>
                     <div className="flex items-center gap-2">
                       <Globe2 className="h-4 w-4 text-primary" />
@@ -920,6 +934,14 @@ export function MemoryWorkspace({
                     <span className="rounded-full bg-white/5 px-3 py-1">
                       {formatEnumLabel(memory.sensitivity)}
                     </span>
+                  </div>
+                  <div className="mt-4">
+                    <Link
+                      href={`/places/${slugifyPlaceName(memory.placeName)}`}
+                      className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/75 transition hover:bg-white/10"
+                    >
+                      Open Place Hub
+                    </Link>
                   </div>
                   {memory.sensitivity !== "STANDARD" ? (
                     <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-50/85">
