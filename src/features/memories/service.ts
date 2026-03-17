@@ -4,9 +4,10 @@ import type {
   DatabaseMemoryRecord,
   MemoryLayer,
   MemoryRecord,
+  UpdateMemoryInput,
 } from "./types";
 
-type ValidationErrors = Partial<Record<keyof CreateMemoryInput | "sourceUrl", string>>;
+type ValidationErrors = Partial<Record<keyof CreateMemoryInput | keyof UpdateMemoryInput | "sourceUrl", string>>;
 
 type ValidationResult = {
   value: (CreateMemoryInput & { metadata: { personName?: string } | null }) | null;
@@ -21,6 +22,12 @@ export type MemoryRepository = {
     userId: string,
     options?: { layer?: MemoryLayer },
   ) => RepositoryResult<DatabaseMemoryRecord[]>;
+  update: (
+    memoryId: string,
+    userId: string,
+    input: Record<string, unknown>,
+  ) => RepositoryResult<DatabaseMemoryRecord>;
+  remove: (memoryId: string, userId: string) => Promise<{ error: string | null }>;
 };
 
 export function validateMemoryInput(input: CreateMemoryInput): ValidationResult {
@@ -144,6 +151,60 @@ export function createMemoryRepository(client: SupabaseTableClient): MemoryRepos
         error: error?.message ?? null,
       };
     },
+    async update(memoryId, userId, input) {
+      if (!client) {
+        return { data: null, error: "Supabase server configuration is missing." };
+      }
+
+      const table = client.from("memories") as {
+        update: (value: Record<string, unknown>) => {
+          eq: (column: string, value: string) => {
+            eq: (column: string, value: string) => {
+              select: () => {
+                single: () => Promise<QueryResult>;
+              };
+            };
+          };
+        };
+      };
+
+      const { data, error } = await table
+        .update({
+          ...input,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", memoryId)
+        .eq("user_id", userId)
+        .select()
+        .single();
+
+      return {
+        data: (data as DatabaseMemoryRecord | null) ?? null,
+        error: error?.message ?? null,
+      };
+    },
+    async remove(memoryId, userId) {
+      if (!client) {
+        return { error: "Supabase server configuration is missing." };
+      }
+
+      const table = client.from("memories") as {
+        delete: () => {
+          eq: (column: string, value: string) => {
+            eq: (column: string, value: string) => Promise<QueryResult>;
+          };
+        };
+      };
+
+      const { error } = await table
+        .delete()
+        .eq("id", memoryId)
+        .eq("user_id", userId);
+
+      return {
+        error: error?.message ?? null,
+      };
+    },
   };
 }
 
@@ -204,6 +265,62 @@ export async function listMemoryRecords(
 
   return {
     data: result.data?.map(mapDatabaseRecord) ?? [],
+    error: result.error,
+  };
+}
+
+export async function updateMemoryRecord(
+  input: UpdateMemoryInput,
+  repository: MemoryRepository = createSupabaseMemoryRepository(),
+) {
+  const { id, ...rest } = input;
+  const validation = validateMemoryInput(rest);
+
+  if (!validation.value) {
+    return {
+      data: null,
+      error: "Please correct the highlighted fields.",
+      validationErrors: validation.errors,
+    };
+  }
+
+  const { metadata, ...value } = validation.value;
+  const payload = {
+    title: value.title,
+    description: value.description || null,
+    layer: value.layer,
+    type: value.type,
+    latitude: value.latitude.toString(),
+    longitude: value.longitude.toString(),
+    person_id: null,
+    metadata,
+    media_urls: [],
+    date_occurred: value.dateOccurred ? new Date(value.dateOccurred).toISOString() : null,
+    source_type: value.sourceType,
+    source_name: value.sourceName,
+    source_url: value.sourceUrl || null,
+    source_notes: value.sourceNotes || null,
+    visibility: value.visibility,
+    status: value.status,
+  };
+
+  const result = await repository.update(id, value.userId, payload);
+
+  return {
+    data: result.data ? mapDatabaseRecord(result.data) : null,
+    error: result.error,
+    validationErrors: {},
+  };
+}
+
+export async function deleteMemoryRecord(
+  memoryId: string,
+  userId: string,
+  repository: MemoryRepository = createSupabaseMemoryRepository(),
+) {
+  const result = await repository.remove(memoryId, userId);
+
+  return {
     error: result.error,
   };
 }

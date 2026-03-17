@@ -49,4 +49,66 @@ describe("memoryClientApi", () => {
     expect(result.error).toMatch(/sign in/i);
     expect(mockFetch).not.toHaveBeenCalled();
   });
+
+  it("calls the memory detail endpoint for updates", async () => {
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+      data: { session: { access_token: "token-123" } },
+    } as never);
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: null, error: null }),
+    });
+
+    await memoryClientApi.updateMemory({
+      id: "memory-1",
+      title: "Updated memory",
+      layer: "HOME",
+      type: "HOME",
+      latitude: 13.08,
+      longitude: 80.27,
+      visibility: "PRIVATE",
+      status: "DRAFT",
+      sourceType: "FAMILY",
+      sourceName: "Interview",
+      userId: "ignored",
+    });
+
+    expect(mockFetch).toHaveBeenCalledWith("/api/memories/memory-1", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer token-123",
+      },
+      body: JSON.stringify({
+        title: "Updated memory",
+        layer: "HOME",
+        type: "HOME",
+        latitude: 13.08,
+        longitude: 80.27,
+        visibility: "PRIVATE",
+        status: "DRAFT",
+        sourceType: "FAMILY",
+        sourceName: "Interview",
+      }),
+    });
+  });
+
+  it("calls the memory detail endpoint for deletes", async () => {
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+      data: { session: { access_token: "token-123" } },
+    } as never);
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ error: null }),
+    });
+
+    await memoryClientApi.deleteMemory("memory-1");
+
+    expect(mockFetch).toHaveBeenCalledWith("/api/memories/memory-1", {
+      method: "DELETE",
+      headers: {
+        Authorization: "Bearer token-123",
+      },
+    });
+  });
 });

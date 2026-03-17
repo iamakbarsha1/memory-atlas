@@ -61,6 +61,10 @@ export type CreateMemoryInput = {
   userId: string;
 };
 
+export type UpdateMemoryInput = CreateMemoryInput & {
+  id: string;
+};
+
 export type DatabaseMemoryRecord = {
   id: string;
   title: string;

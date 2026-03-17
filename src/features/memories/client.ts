@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase";
-import type { CreateMemoryInput, MemoryLayer, MemoryRecord } from "./types";
+import type { CreateMemoryInput, MemoryLayer, MemoryRecord, UpdateMemoryInput } from "./types";
 
 async function getAccessToken() {
   const { data } = await supabase.auth.getSession();
@@ -60,6 +60,64 @@ export const memoryClientApi = {
       data: payload.data,
       error: payload.error,
       validationErrors: payload.validationErrors ?? {},
+    };
+  },
+
+  async updateMemory(input: UpdateMemoryInput) {
+    const token = await getAccessToken();
+
+    if (!token) {
+      return {
+        data: null,
+        error: "Please sign in before updating a memory.",
+        validationErrors: {},
+      };
+    }
+
+    const { id, userId, ...body } = input;
+    void userId;
+    const response = await fetch(`/api/memories/${id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(body),
+    });
+    const payload = (await response.json()) as {
+      data: MemoryRecord | null;
+      error: string | null;
+      validationErrors?: Record<string, string>;
+    };
+
+    return {
+      data: payload.data,
+      error: payload.error,
+      validationErrors: payload.validationErrors ?? {},
+    };
+  },
+
+  async deleteMemory(memoryId: string) {
+    const token = await getAccessToken();
+
+    if (!token) {
+      return {
+        error: "Please sign in before deleting a memory.",
+      };
+    }
+
+    const response = await fetch(`/api/memories/${memoryId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const payload = (await response.json()) as {
+      error: string | null;
+    };
+
+    return {
+      error: payload.error,
     };
   },
 };

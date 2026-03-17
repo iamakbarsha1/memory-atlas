@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createMemoryRecord,
   listMemoryRecords,
+  deleteMemoryRecord,
+  updateMemoryRecord,
   validateMemoryInput,
   type MemoryRepository,
 } from "./service";
@@ -51,6 +53,8 @@ function createRepository(): MemoryRepository {
   return {
     create: vi.fn().mockResolvedValue({ data: dbRecord, error: null }),
     listByUser: vi.fn().mockResolvedValue({ data: [dbRecord], error: null }),
+    update: vi.fn().mockResolvedValue({ data: dbRecord, error: null }),
+    remove: vi.fn().mockResolvedValue({ error: null }),
   };
 }
 
@@ -132,5 +136,41 @@ describe("listMemoryRecords", () => {
     expect(repository.listByUser).toHaveBeenCalledWith("user-123", { layer: "HOME" });
     expect(result.data).toHaveLength(1);
     expect(result.data?.[0].layer).toBe("HOME");
+  });
+});
+
+describe("updateMemoryRecord", () => {
+  it("sends the normalized payload to the repository", async () => {
+    const repository = createRepository();
+
+    const result = await updateMemoryRecord(
+      {
+        ...baseInput,
+        id: "memory-1",
+        title: "  Updated Home Record ",
+      },
+      repository,
+    );
+
+    expect(repository.update).toHaveBeenCalledWith(
+      "memory-1",
+      "user-123",
+      expect.objectContaining({
+        title: "Updated Home Record",
+        source_name: "Oral history interview",
+      }),
+    );
+    expect(result.data?.title).toBe("Khan Family Home");
+  });
+});
+
+describe("deleteMemoryRecord", () => {
+  it("passes the id and user through to the repository", async () => {
+    const repository = createRepository();
+
+    const result = await deleteMemoryRecord("memory-1", "user-123", repository);
+
+    expect(repository.remove).toHaveBeenCalledWith("memory-1", "user-123");
+    expect(result.error).toBeNull();
   });
 });

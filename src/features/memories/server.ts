@@ -1,5 +1,11 @@
-import { createMemoryRecord, listMemoryRecords, type MemoryRepository } from "./service";
-import type { CreateMemoryInput, MemoryLayer } from "./types";
+import {
+  createMemoryRecord,
+  deleteMemoryRecord,
+  listMemoryRecords,
+  updateMemoryRecord,
+  type MemoryRepository,
+} from "./service";
+import type { CreateMemoryInput, MemoryLayer, UpdateMemoryInput } from "./types";
 
 export type MemoryRequestDeps = {
   isConfigured: boolean;
@@ -125,6 +131,105 @@ export async function createMemoryForRequest(
       data: result.data,
       error: result.error,
       validationErrors: result.validationErrors,
+    },
+  };
+}
+
+export async function updateMemoryForRequest(
+  request: {
+    authorizationHeader?: string | null;
+    memoryId: string;
+    body: Partial<UpdateMemoryInput> | null;
+  },
+  deps: MemoryRequestDeps,
+): Promise<RequestResponse> {
+  if (!deps.isConfigured) {
+    return {
+      status: 503,
+      body: { data: null, error: "Supabase server configuration is missing." },
+    };
+  }
+
+  const auth = await authenticateRequest(request.authorizationHeader, deps);
+  if (auth.error) {
+    return {
+      status: auth.status,
+      body: { data: null, error: auth.error },
+    };
+  }
+
+  const body = request.body ?? {};
+  const result = await updateMemoryRecord(
+    {
+      id: request.memoryId,
+      title: body.title ?? "",
+      description: body.description,
+      layer: (body.layer as UpdateMemoryInput["layer"]) ?? "BURIAL",
+      type: (body.type as UpdateMemoryInput["type"]) ?? "BURIAL",
+      latitude: Number(body.latitude ?? Number.NaN),
+      longitude: Number(body.longitude ?? Number.NaN),
+      dateOccurred: body.dateOccurred,
+      personName: body.personName,
+      visibility: (body.visibility as UpdateMemoryInput["visibility"]) ?? "PRIVATE",
+      status: (body.status as UpdateMemoryInput["status"]) ?? "DRAFT",
+      sourceType: (body.sourceType as UpdateMemoryInput["sourceType"]) ?? "FAMILY",
+      sourceName: body.sourceName ?? "",
+      sourceUrl: body.sourceUrl,
+      sourceNotes: body.sourceNotes,
+      userId: auth.userId,
+    },
+    deps.repository,
+  );
+
+  if (result.validationErrors && Object.keys(result.validationErrors).length > 0) {
+    return {
+      status: 400,
+      body: {
+        data: null,
+        error: result.error,
+        validationErrors: result.validationErrors,
+      },
+    };
+  }
+
+  return {
+    status: result.error ? 500 : 200,
+    body: {
+      data: result.data,
+      error: result.error,
+      validationErrors: result.validationErrors,
+    },
+  };
+}
+
+export async function deleteMemoryForRequest(
+  request: {
+    authorizationHeader?: string | null;
+    memoryId: string;
+  },
+  deps: MemoryRequestDeps,
+): Promise<RequestResponse> {
+  if (!deps.isConfigured) {
+    return {
+      status: 503,
+      body: { error: "Supabase server configuration is missing." },
+    };
+  }
+
+  const auth = await authenticateRequest(request.authorizationHeader, deps);
+  if (auth.error) {
+    return {
+      status: auth.status,
+      body: { error: auth.error },
+    };
+  }
+
+  const result = await deleteMemoryRecord(request.memoryId, auth.userId, deps.repository);
+
+  return {
+    status: result.error ? 500 : 200,
+    body: {
+      error: result.error,
     },
   };
 }

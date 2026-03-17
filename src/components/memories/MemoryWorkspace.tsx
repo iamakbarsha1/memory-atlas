@@ -14,6 +14,7 @@ import {
   type CreateMemoryInput,
   type MemoryLayer,
   type MemoryRecord,
+  type UpdateMemoryInput,
 } from "@/features/memories/types";
 
 type MemoryWorkspaceProps = {
@@ -27,6 +28,10 @@ type MemoryWorkspaceProps = {
     createMemory: (
       input: CreateMemoryInput,
     ) => Promise<{ data: MemoryRecord | null; error: string | null; validationErrors?: Record<string, string> }>;
+    updateMemory: (
+      input: UpdateMemoryInput,
+    ) => Promise<{ data: MemoryRecord | null; error: string | null; validationErrors?: Record<string, string> }>;
+    deleteMemory: (memoryId: string) => Promise<{ error: string | null }>;
   };
 };
 
@@ -68,14 +73,26 @@ export function MemoryWorkspace({
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [form, setForm] = useState(initialFormState);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  async function refreshMemories() {
+    setLoading(true);
+    setLoadError(null);
+
+    const result = await memoryApi.listMemories(
+      userId,
+      selectedLayer === "ALL" ? undefined : { layer: selectedLayer },
+    );
+
+    setMemories(result.data ?? []);
+    setLoadError(result.error);
+    setLoading(false);
+  }
 
   useEffect(() => {
     let isActive = true;
 
     async function load() {
-      setLoading(true);
-      setLoadError(null);
-
       const result = await memoryApi.listMemories(
         userId,
         selectedLayer === "ALL" ? undefined : { layer: selectedLayer },
@@ -110,12 +127,20 @@ export function MemoryWorkspace({
     setSubmitError(null);
     setSubmitSuccess(null);
 
-    const result = await memoryApi.createMemory({
-      ...form,
-      latitude: Number(form.latitude),
-      longitude: Number(form.longitude),
-      userId,
-    });
+    const result = editingId
+      ? await memoryApi.updateMemory({
+          id: editingId,
+          ...form,
+          latitude: Number(form.latitude),
+          longitude: Number(form.longitude),
+          userId,
+        })
+      : await memoryApi.createMemory({
+          ...form,
+          latitude: Number(form.latitude),
+          longitude: Number(form.longitude),
+          userId,
+        });
 
     if (result.error) {
       setSubmitError(result.error);
@@ -125,7 +150,7 @@ export function MemoryWorkspace({
     }
 
     setFieldErrors({});
-    setSubmitSuccess("Draft memory saved.");
+    setSubmitSuccess(editingId ? "Memory updated." : "Draft memory saved.");
     setForm({
       ...initialFormState,
       layer: form.layer,
@@ -134,14 +159,66 @@ export function MemoryWorkspace({
       status: form.status,
       sourceType: form.sourceType,
     });
-
-    const refreshed = await memoryApi.listMemories(
-      userId,
-      selectedLayer === "ALL" ? undefined : { layer: selectedLayer },
-    );
-    setMemories(refreshed.data ?? []);
-    setLoadError(refreshed.error);
+    setEditingId(null);
+    await refreshMemories();
     setSaving(false);
+  }
+
+  function handleEdit(memory: MemoryRecord) {
+    setEditingId(memory.id);
+    setSubmitError(null);
+    setSubmitSuccess(null);
+    setFieldErrors({});
+    setForm({
+      title: memory.title,
+      description: memory.description ?? "",
+      layer: memory.layer,
+      type: memory.type,
+      latitude: memory.latitude,
+      longitude: memory.longitude,
+      dateOccurred: memory.dateOccurred ? memory.dateOccurred.slice(0, 10) : "",
+      personName: memory.personName ?? "",
+      visibility: memory.visibility,
+      status: memory.status,
+      sourceType: memory.sourceType,
+      sourceName: memory.sourceName,
+      sourceUrl: memory.sourceUrl ?? "",
+      sourceNotes: memory.sourceNotes ?? "",
+    });
+  }
+
+  async function handleDelete(memoryId: string) {
+    setSubmitError(null);
+    setSubmitSuccess(null);
+
+    const result = await memoryApi.deleteMemory(memoryId);
+
+    if (result.error) {
+      setSubmitError(result.error);
+      return;
+    }
+
+    if (editingId === memoryId) {
+      setEditingId(null);
+      setForm(initialFormState);
+    }
+
+    setSubmitSuccess("Memory deleted.");
+    await refreshMemories();
+  }
+
+  function handleCancelEdit() {
+    setEditingId(null);
+    setSubmitError(null);
+    setSubmitSuccess(null);
+    setFieldErrors({});
+    setForm(initialFormState);
+  }
+
+  function handleLayerSelect(layer: MemoryLayer | "ALL") {
+    setLoading(true);
+    setLoadError(null);
+    setSelectedLayer(layer);
   }
 
   function handleFieldChange<K extends keyof typeof form>(field: K, value: (typeof form)[K]) {
@@ -165,7 +242,9 @@ export function MemoryWorkspace({
             <div className="text-sm font-semibold uppercase tracking-[0.25em] text-primary/80">
               Atlas Workspace
             </div>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight">Build your first memory layer</h2>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight">
+              {editingId ? "Edit memory record" : "Build your first memory layer"}
+            </h2>
             <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/60">
               Signed in as {userName || "memory archivist"}. This Phase 1 workspace stores
               structured records with source, visibility, status, and layer metadata.
@@ -368,13 +447,24 @@ export function MemoryWorkspace({
               <ShieldCheck className="h-4 w-4 text-primary" />
               Records include moderation-ready status and visibility fields.
             </div>
-            <Button
-              type="submit"
-              disabled={saving}
-              className="rounded-full bg-primary px-6 py-3 font-semibold text-white hover:bg-primary/90"
-            >
-              {saving ? "Saving..." : "Save Draft Memory"}
-            </Button>
+            <div className="flex items-center gap-3">
+              {editingId ? (
+                <Button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  className="rounded-full border border-white/10 bg-white/5 px-6 py-3 font-semibold text-white hover:bg-white/10"
+                >
+                  Cancel
+                </Button>
+              ) : null}
+              <Button
+                type="submit"
+                disabled={saving}
+                className="rounded-full bg-primary px-6 py-3 font-semibold text-white hover:bg-primary/90"
+              >
+                {saving ? "Saving..." : editingId ? "Save Changes" : "Save Draft Memory"}
+              </Button>
+            </div>
           </div>
         </form>
       </div>
@@ -391,14 +481,14 @@ export function MemoryWorkspace({
             <FilterButton
               active={selectedLayer === "ALL"}
               label="All"
-              onClick={() => setSelectedLayer("ALL")}
+              onClick={() => handleLayerSelect("ALL")}
             />
             {memoryLayerValues.map((layer) => (
               <FilterButton
                 key={layer}
                 active={selectedLayer === layer}
                 label={layerLabels[layer]}
-                onClick={() => setSelectedLayer(layer)}
+                onClick={() => handleLayerSelect(layer)}
               />
             ))}
           </div>
@@ -468,6 +558,24 @@ export function MemoryWorkspace({
                     <span className="rounded-full bg-white/5 px-3 py-1">{memory.visibility}</span>
                     <span className="rounded-full bg-white/5 px-3 py-1">{memory.sourceType}</span>
                     <span className="rounded-full bg-white/5 px-3 py-1">{memory.type}</span>
+                  </div>
+                  <div className="mt-4 flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleEdit(memory)}
+                      className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/75 transition hover:bg-white/10"
+                      aria-label={`Edit ${memory.title}`}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleDelete(memory.id)}
+                      className="rounded-full border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm text-red-200 transition hover:bg-red-500/20"
+                      aria-label={`Delete ${memory.title}`}
+                    >
+                      Delete
+                    </button>
                   </div>
                 </article>
               ))

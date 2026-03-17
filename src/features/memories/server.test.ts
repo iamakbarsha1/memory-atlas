@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   createMemoryForRequest,
+  deleteMemoryForRequest,
   listMemoriesForRequest,
+  updateMemoryForRequest,
   type MemoryRequestDeps,
 } from "./server";
 
@@ -41,6 +43,34 @@ function createDeps(): MemoryRequestDeps {
       }),
       listByUser: vi.fn().mockResolvedValue({
         data: [],
+        error: null,
+      }),
+      update: vi.fn().mockResolvedValue({
+        data: {
+          id: "memory-1",
+          title: "Updated title",
+          description: "Three generations lived here.",
+          layer: "HOME",
+          type: "HOME",
+          latitude: "13.08",
+          longitude: "80.27",
+          person_id: null,
+          user_id: "user-123",
+          metadata: { personName: "Amina Khan" },
+          media_urls: [],
+          date_occurred: null,
+          source_type: "FAMILY",
+          source_name: "Interview",
+          source_url: null,
+          source_notes: "Recorded in 2024",
+          visibility: "FAMILY",
+          status: "DRAFT",
+          created_at: "2026-03-17T10:00:00.000Z",
+          updated_at: "2026-03-17T11:00:00.000Z",
+        },
+        error: null,
+      }),
+      remove: vi.fn().mockResolvedValue({
         error: null,
       }),
     },
@@ -129,5 +159,54 @@ describe("createMemoryForRequest", () => {
       title: "Title is required.",
       sourceName: "Source name is required.",
     });
+  });
+});
+
+describe("updateMemoryForRequest", () => {
+  it("updates a user-owned record", async () => {
+    const deps = createDeps();
+
+    const result = await updateMemoryForRequest(
+      {
+        authorizationHeader: "Bearer token-123",
+        memoryId: "memory-1",
+        body: {
+          title: "Updated title",
+          layer: "HOME",
+          type: "HOME",
+          latitude: 13.08,
+          longitude: 80.27,
+          visibility: "FAMILY",
+          status: "DRAFT",
+          sourceType: "FAMILY",
+          sourceName: "Interview",
+        },
+      },
+      deps,
+    );
+
+    expect(deps.repository.update).toHaveBeenCalledWith(
+      "memory-1",
+      "user-123",
+      expect.objectContaining({ title: "Updated title" }),
+    );
+    expect(result.status).toBe(200);
+  });
+});
+
+describe("deleteMemoryForRequest", () => {
+  it("deletes a user-owned record", async () => {
+    const deps = createDeps();
+
+    const result = await deleteMemoryForRequest(
+      {
+        authorizationHeader: "Bearer token-123",
+        memoryId: "memory-1",
+      },
+      deps,
+    );
+
+    expect(deps.repository.remove).toHaveBeenCalledWith("memory-1", "user-123");
+    expect(result.status).toBe(200);
   });
 });
