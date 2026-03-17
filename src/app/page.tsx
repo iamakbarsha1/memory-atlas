@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -23,6 +24,7 @@ import { SignupForm } from "@/components/auth/SignupForm";
 import { GlobeScene } from "@/components/globe/GlobeScene";
 import { MemoryWorkspace } from "@/components/memories/MemoryWorkspace";
 import { useAuth } from "@/context/AuthContext";
+import { buildPlaceHubs, demoPlaceMemories } from "@/features/place-hubs/utils";
 
 const memoryLayers = [
   {
@@ -89,6 +91,8 @@ const businessTracks = [
     description: "License curated place-memory datasets to cities, museums, and researchers.",
   },
 ];
+
+const placeHubPreviews = buildPlaceHubs(demoPlaceMemories).slice(0, 3);
 
 export default function LandingPage() {
   const [authMode, setAuthMode] = useState<"login" | "signup" | null>(null);
@@ -349,6 +353,40 @@ export default function LandingPage() {
                 </div>
               </div>
             </div>
+          </div>
+        </section>
+
+        <section className="glass-panel rounded-[2rem] p-8 md:p-10">
+          <div className="max-w-3xl">
+            <div className="text-sm font-semibold uppercase tracking-[0.28em] text-primary/75">
+              Canonical Place Hubs
+            </div>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight md:text-4xl">
+              Give each place its own memory page.
+            </h2>
+            <p className="mt-3 text-white/55">
+              Dedicated place hubs gather nearby memories, partner collections, and map context into one canonical view for a city, campus, cemetery, or archive site.
+            </p>
+          </div>
+
+          <div className="mt-8 grid gap-6 md:grid-cols-3">
+            {placeHubPreviews.map((hub) => (
+              <Link
+                key={hub.slug}
+                href={`/places/${hub.slug}`}
+                className="rounded-[1.75rem] border border-white/10 bg-white/5 p-6 transition hover:bg-white/10"
+              >
+                <div className="text-xs uppercase tracking-[0.25em] text-primary/75">
+                  {hub.layers.join(" · ")}
+                </div>
+                <div className="mt-3 text-2xl font-semibold">{hub.placeName}</div>
+                <p className="mt-3 text-sm leading-relaxed text-white/60">{hub.summary}</p>
+                <div className="mt-5 flex items-center justify-between text-sm text-white/55">
+                  <span>{hub.totalRecords} mapped memories</span>
+                  <span>Open hub</span>
+                </div>
+              </Link>
+            ))}
           </div>
         </section>
 
