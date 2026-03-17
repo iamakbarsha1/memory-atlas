@@ -10,7 +10,7 @@ import { MemoryMap } from "@/components/memories/MemoryMap";
 import { PartnerDashboard } from "@/components/memories/PartnerDashboard";
 import { MemoryTimeline } from "@/components/memories/MemoryTimeline";
 import { memoryClientApi } from "@/features/memories/client";
-import { slugifyPlaceName } from "@/features/place-hubs/utils";
+import { buildPlaceFacets, slugifyPlaceName } from "@/features/place-hubs/utils";
 import {
   memoryLayerValues,
   memorySensitivityValues,
@@ -90,6 +90,7 @@ export function MemoryWorkspace({
 }: MemoryWorkspaceProps) {
   const [selectedLayer, setSelectedLayer] = useState<MemoryLayer | "ALL">("ALL");
   const [memories, setMemories] = useState<MemoryRecord[]>([]);
+  const [placeFacetMemories, setPlaceFacetMemories] = useState<MemoryRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -102,12 +103,14 @@ export function MemoryWorkspace({
   const [selectedPerson, setSelectedPerson] = useState<string | null>(null);
   const [browseFilters, setBrowseFilters] = useState<{
     query: string;
+    placeName: string;
     status: "ALL" | (typeof memoryStatusValues)[number];
     sensitivity: "ALL" | (typeof memorySensitivityValues)[number];
     dateFrom: string;
     dateTo: string;
   }>({
     query: "",
+    placeName: "ALL",
     status: "ALL",
     sensitivity: "ALL",
     dateFrom: "",
@@ -117,6 +120,7 @@ export function MemoryWorkspace({
   const activeListFilters = useMemo<MemoryListFilters>(() => {
     return {
       layer: selectedLayer === "ALL" ? undefined : selectedLayer,
+      placeName: browseFilters.placeName === "ALL" ? undefined : browseFilters.placeName,
       status: browseFilters.status === "ALL" ? undefined : browseFilters.status,
       sensitivity: browseFilters.sensitivity === "ALL" ? undefined : browseFilters.sensitivity,
       query: browseFilters.query.trim() || undefined,
@@ -124,6 +128,24 @@ export function MemoryWorkspace({
       dateTo: browseFilters.dateTo || undefined,
     };
   }, [browseFilters, selectedLayer]);
+
+  const placeFacetFilters = useMemo<MemoryListFilters>(() => {
+    return {
+      layer: selectedLayer === "ALL" ? undefined : selectedLayer,
+      status: browseFilters.status === "ALL" ? undefined : browseFilters.status,
+      sensitivity: browseFilters.sensitivity === "ALL" ? undefined : browseFilters.sensitivity,
+      query: browseFilters.query.trim() || undefined,
+      dateFrom: browseFilters.dateFrom || undefined,
+      dateTo: browseFilters.dateTo || undefined,
+    };
+  }, [
+    browseFilters.dateFrom,
+    browseFilters.dateTo,
+    browseFilters.query,
+    browseFilters.sensitivity,
+    browseFilters.status,
+    selectedLayer,
+  ]);
 
   async function refreshMemories() {
     setLoading(true);
@@ -202,6 +224,26 @@ export function MemoryWorkspace({
     };
   }, [activeListFilters, memoryApi, userId]);
 
+  useEffect(() => {
+    let isActive = true;
+
+    async function loadPlaceFacets() {
+      const result = await memoryApi.listMemories(userId, placeFacetFilters);
+
+      if (!isActive) {
+        return;
+      }
+
+      setPlaceFacetMemories(result.data ?? []);
+    }
+
+    void loadPlaceFacets();
+
+    return () => {
+      isActive = false;
+    };
+  }, [memoryApi, placeFacetFilters, userId]);
+
   const layerSummary = useMemo(() => {
     return memoryLayerValues.map((layer) => ({
       layer,
@@ -216,6 +258,8 @@ export function MemoryWorkspace({
 
     return { reviewCount, sensitiveCount, memorialCount };
   }, [memories]);
+
+  const placeFacets = useMemo(() => buildPlaceFacets(placeFacetMemories).slice(0, 6), [placeFacetMemories]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -400,7 +444,7 @@ export function MemoryWorkspace({
           </div>
         </div>
 
-        <div className="mt-6 grid gap-4 rounded-[1.5rem] border border-white/10 bg-white/5 p-4 md:grid-cols-5">
+        <div className="mt-6 grid gap-4 rounded-[1.5rem] border border-white/10 bg-white/5 p-4 md:grid-cols-6">
           <Field label="Search">
             <input
               aria-label="Search memories"
@@ -409,6 +453,22 @@ export function MemoryWorkspace({
               className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none transition focus:border-primary"
               placeholder="Person, place, source"
             />
+          </Field>
+
+          <Field label="Place">
+            <select
+              aria-label="Browse place"
+              value={browseFilters.placeName}
+              onChange={(event) => handleBrowseFilterChange("placeName", event.target.value)}
+              className="w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-primary"
+            >
+              <option value="ALL">All places</option>
+              {placeFacets.map((place) => (
+                <option key={place.slug} value={place.placeName}>
+                  {place.placeName}
+                </option>
+              ))}
+            </select>
           </Field>
 
           <Field label="Status">
@@ -472,6 +532,40 @@ export function MemoryWorkspace({
               className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none transition focus:border-primary"
             />
           </Field>
+        </div>
+
+        <div className="mt-4 rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
+          <div className="text-xs font-semibold uppercase tracking-[0.25em] text-white/45">
+            Place Facets
+          </div>
+          <div className="mt-3 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => handleBrowseFilterChange("placeName", "ALL")}
+              className={`rounded-full border px-4 py-2 text-sm transition ${
+                browseFilters.placeName === "ALL"
+                  ? "border-primary/40 bg-primary/15 text-white"
+                  : "border-white/10 bg-white/5 text-white/70 hover:bg-white/10"
+              }`}
+            >
+              All places
+            </button>
+            {placeFacets.map((place) => (
+              <button
+                key={place.slug}
+                type="button"
+                aria-label={`Place facet ${place.placeName}`}
+                onClick={() => handleBrowseFilterChange("placeName", place.placeName)}
+                className={`rounded-full border px-4 py-2 text-sm transition ${
+                  browseFilters.placeName === place.placeName
+                    ? "border-primary/40 bg-primary/15 text-white"
+                    : "border-white/10 bg-white/5 text-white/70 hover:bg-white/10"
+                }`}
+              >
+                {place.placeName} · {place.totalRecords}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="mt-4 grid gap-4 md:grid-cols-3">

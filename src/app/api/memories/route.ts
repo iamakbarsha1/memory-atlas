@@ -55,6 +55,7 @@ export async function GET(request: NextRequest) {
     {
       authorizationHeader: request.headers.get("authorization"),
       layer: request.nextUrl.searchParams.get("layer"),
+      placeName: request.nextUrl.searchParams.get("placeName"),
       query: request.nextUrl.searchParams.get("query"),
       status: request.nextUrl.searchParams.get("status"),
       sensitivity: request.nextUrl.searchParams.get("sensitivity"),

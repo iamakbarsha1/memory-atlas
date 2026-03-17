@@ -67,6 +67,7 @@ export type MemoryRecord = {
 
 export type MemoryListFilters = {
   layer?: MemoryLayer;
+  placeName?: string;
   status?: MemoryStatus;
   sensitivity?: MemorySensitivity;
   query?: string;

@@ -1,11 +1,6 @@
 import { PlaceHubClient } from "@/components/places/PlaceHubClient";
-import { buildPlaceHubs, demoPlaceMemories } from "@/features/place-hubs/utils";
 
-export function generateStaticParams() {
-  return buildPlaceHubs(demoPlaceMemories).map((hub) => ({
-    slug: hub.slug,
-  }));
-}
+export const dynamic = "force-dynamic";
 
 export default async function PlaceHubPage({
   params,

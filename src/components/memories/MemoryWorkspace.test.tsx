@@ -62,6 +62,7 @@ describe("MemoryWorkspace", () => {
     await waitFor(() => {
       expect(listMemories).toHaveBeenLastCalledWith("user-123", {
         layer: "HOME",
+        placeName: undefined,
         status: undefined,
         sensitivity: undefined,
         query: undefined,
@@ -73,7 +74,7 @@ describe("MemoryWorkspace", () => {
 
   it("passes search and browse filters to the list API", async () => {
     const listMemories = vi.fn().mockResolvedValue({
-      data: [],
+      data: [makeMemory()],
       error: null,
     });
     const createMemory = vi.fn();
@@ -88,9 +89,12 @@ describe("MemoryWorkspace", () => {
       />,
     );
 
+    await screen.findByRole("button", { name: /Place facet Chennai/i });
+
     fireEvent.change(screen.getByLabelText(/Search memories/i), {
       target: { value: "amina" },
     });
+    fireEvent.click(screen.getByRole("button", { name: /Place facet Chennai/i }));
     fireEvent.change(screen.getByLabelText(/Browse status/i), {
       target: { value: "DRAFT" },
     });
@@ -105,13 +109,106 @@ describe("MemoryWorkspace", () => {
     });
 
     await waitFor(() => {
-      expect(listMemories).toHaveBeenLastCalledWith("user-123", {
+      expect(listMemories).toHaveBeenCalledWith("user-123", {
         layer: undefined,
+        placeName: "Chennai",
         status: "DRAFT",
         sensitivity: "STANDARD",
         query: "amina",
         dateFrom: "1990-01-01",
         dateTo: "1995-01-01",
+      });
+    });
+  });
+
+  it("shows place facets and applies a place-first filter", async () => {
+    const listMemories = vi
+      .fn()
+      .mockResolvedValueOnce({
+        data: [
+          makeMemory(),
+          makeMemory({
+            id: "2",
+            title: "University Years",
+            placeName: "Chennai",
+            layer: "EDUCATION",
+            type: "EDUCATION",
+          }),
+        ],
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: [
+          makeMemory(),
+          makeMemory({
+            id: "2",
+            title: "University Years",
+            placeName: "Chennai",
+            layer: "EDUCATION",
+            type: "EDUCATION",
+          }),
+          makeMemory({
+            id: "3",
+            title: "Memorial Registry",
+            placeName: "Dubai",
+            layer: "BURIAL",
+            type: "BURIAL",
+            latitude: 25.2048,
+            longitude: 55.2708,
+            personName: "Yusuf Khan",
+          }),
+        ],
+        error: null,
+      })
+      .mockResolvedValue({
+        data: [
+          makeMemory(),
+          makeMemory({
+            id: "2",
+            title: "University Years",
+            placeName: "Chennai",
+            layer: "EDUCATION",
+            type: "EDUCATION",
+          }),
+          makeMemory({
+            id: "3",
+            title: "Memorial Registry",
+            placeName: "Dubai",
+            layer: "BURIAL",
+            type: "BURIAL",
+            latitude: 25.2048,
+            longitude: 55.2708,
+            personName: "Yusuf Khan",
+          }),
+        ],
+        error: null,
+      });
+    const createMemory = vi.fn();
+    const updateMemory = vi.fn();
+    const deleteMemory = vi.fn();
+
+    render(
+      <MemoryWorkspace
+        userId="user-123"
+        userName="Akbarsha"
+        memoryApi={{ listMemories, createMemory, updateMemory, deleteMemory }}
+      />,
+    );
+
+    expect(await screen.findByRole("button", { name: /Place facet Chennai/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Place facet Dubai/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Place facet Dubai/i }));
+
+    await waitFor(() => {
+      expect(listMemories).toHaveBeenCalledWith("user-123", {
+        layer: undefined,
+        placeName: "Dubai",
+        status: undefined,
+        sensitivity: undefined,
+        query: undefined,
+        dateFrom: undefined,
+        dateTo: undefined,
       });
     });
   });
@@ -183,6 +280,33 @@ describe("MemoryWorkspace", () => {
       .fn()
       .mockResolvedValueOnce({ data: [], error: null })
       .mockResolvedValueOnce({
+        data: [],
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: [
+          makeMemory({
+            id: "1",
+            title: "Grandfather Burial Plot",
+            description: "Section B",
+            placeName: "Dubai",
+            layer: "BURIAL",
+            type: "BURIAL",
+            latitude: 25.2048,
+            longitude: 55.2708,
+            dateOccurred: null,
+            personName: "Yusuf Khan",
+            visibility: "PRIVATE",
+            sourceName: "Family record",
+            sourceNotes: "Verified by family",
+            sensitivity: "MEMORIAL",
+            respectfulHandlingNotes: "Coordinate sharing should stay approximate.",
+            hidePreciseLocation: true,
+          }),
+        ],
+        error: null,
+      })
+      .mockResolvedValue({
         data: [
           makeMemory({
             id: "1",
@@ -279,6 +403,14 @@ describe("MemoryWorkspace", () => {
       .fn()
       .mockResolvedValueOnce({ data: [memory], error: null })
       .mockResolvedValueOnce({
+        data: [memory],
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: [{ ...memory, title: "Updated Home Record" }],
+        error: null,
+      })
+      .mockResolvedValue({
         data: [{ ...memory, title: "Updated Home Record" }],
         error: null,
       });
@@ -321,7 +453,9 @@ describe("MemoryWorkspace", () => {
     const listMemories = vi
       .fn()
       .mockResolvedValueOnce({ data: [memory], error: null })
-      .mockResolvedValueOnce({ data: [], error: null });
+      .mockResolvedValueOnce({ data: [memory], error: null })
+      .mockResolvedValueOnce({ data: [], error: null })
+      .mockResolvedValue({ data: [], error: null });
     const createMemory = vi.fn();
     const updateMemory = vi.fn();
     const deleteMemory = vi.fn().mockResolvedValue({ error: null });

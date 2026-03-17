@@ -7,7 +7,7 @@ import { MemoryMap } from "@/components/memories/MemoryMap";
 import { memoryClientApi } from "@/features/memories/client";
 import type { MemoryListFilters, MemoryRecord } from "@/features/memories/types";
 import { buildPartnerCollections } from "@/features/partner-dashboard/analytics";
-import { buildPlaceHubs, demoPlaceMemories, getPlaceHubBySlug } from "@/features/place-hubs/utils";
+import { buildPlaceHubs, getPlaceHubBySlug } from "@/features/place-hubs/utils";
 import { useAuth } from "@/context/AuthContext";
 
 export function PlaceHubClient({
@@ -23,7 +23,7 @@ export function PlaceHubClient({
   };
 }) {
   const { user } = useAuth();
-  const [memories, setMemories] = useState<MemoryRecord[]>(demoPlaceMemories);
+  const [memories, setMemories] = useState<MemoryRecord[]>([]);
   const [loading, setLoading] = useState(Boolean(user));
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedMemoryId, setSelectedMemoryId] = useState<string | null>(null);
@@ -33,7 +33,7 @@ export function PlaceHubClient({
 
     async function load() {
       if (!user) {
-        setMemories(demoPlaceMemories);
+        setMemories([]);
         setLoading(false);
         return;
       }
@@ -44,7 +44,7 @@ export function PlaceHubClient({
         return;
       }
 
-      setMemories(result.data.length > 0 ? result.data : demoPlaceMemories);
+      setMemories(result.data);
       setLoadError(result.error);
       setLoading(false);
     }
@@ -83,7 +83,9 @@ export function PlaceHubClient({
           </Link>
           <h1 className="mt-6 text-3xl font-semibold">Place hub not found</h1>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/60">
-            This canonical place page does not exist in the current atlas view yet.
+            {user
+              ? "This canonical place page does not exist in your current atlas data yet."
+              : "Sign in and add memories with a place name to generate canonical place hubs from stored records."}
           </p>
         </div>
       </div>

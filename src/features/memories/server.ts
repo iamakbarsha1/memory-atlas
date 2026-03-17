@@ -31,6 +31,7 @@ export async function listMemoriesForRequest(
   request: {
     authorizationHeader?: string | null;
     layer?: string | null;
+    placeName?: string | null;
     query?: string | null;
     status?: string | null;
     sensitivity?: string | null;
@@ -61,6 +62,7 @@ export async function listMemoriesForRequest(
     auth.userId,
     {
       layer,
+      placeName: request.placeName ?? undefined,
       status,
       sensitivity,
       query: request.query ?? undefined,

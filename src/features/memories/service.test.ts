@@ -210,6 +210,24 @@ describe("listMemoryRecords", () => {
     expect(result.data).toHaveLength(1);
     expect(result.data[0].title).toBe("Khan Family Home");
   });
+
+  it("filters by place name", async () => {
+    const repository = createRepository();
+
+    const result = await listMemoryRecords(
+      "user-123",
+      {
+        placeName: "Chennai",
+      },
+      repository,
+    );
+
+    expect(repository.listByUser).toHaveBeenCalledWith("user-123", {
+      placeName: "Chennai",
+    });
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0].placeName).toBe("Chennai");
+  });
 });
 
 describe("updateMemoryRecord", () => {

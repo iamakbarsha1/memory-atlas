@@ -39,7 +39,9 @@ describe("LandingPage", () => {
     expect(screen.getByText(/Education Layer/i)).toBeInTheDocument();
     expect(screen.getByText(/Historical Moments Layer/i)).toBeInTheDocument();
     expect(screen.getByText(/Map a person’s life journey\./i)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Chennai/i })).toHaveAttribute("href", "/places/chennai");
+    expect(
+      screen.getByText(/Canonical place hubs become data-driven after sign-in/i),
+    ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /View Product Plan/i })).toHaveAttribute(
       "href",
       "#user-story-plan",

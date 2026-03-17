@@ -122,6 +122,7 @@ describe("listMemoriesForRequest", () => {
       {
         authorizationHeader: "Bearer token-123",
         layer: "HOME",
+        placeName: "Chennai",
         status: "DRAFT",
         sensitivity: "STANDARD",
         query: "amina",
@@ -133,6 +134,7 @@ describe("listMemoriesForRequest", () => {
 
     expect(deps.repository.listByUser).toHaveBeenCalledWith("user-123", {
       layer: "HOME",
+      placeName: "Chennai",
       status: "DRAFT",
       sensitivity: "STANDARD",
       query: "amina",

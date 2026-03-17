@@ -199,6 +199,10 @@ export function createMemoryRepository(client: SupabaseTableClient): MemoryRepos
         query = query.eq("layer", options.layer);
       }
 
+      if (options?.placeName) {
+        query = query.eq("place_name", options.placeName);
+      }
+
       if (options?.status) {
         query = query.eq("status", options.status);
       }
@@ -465,6 +469,10 @@ function applyMemoryFilters(records: MemoryRecord[], options?: MemoryListFilters
 
   return records.filter((record) => {
     if (options.layer && record.layer !== options.layer) {
+      return false;
+    }
+
+    if (options.placeName && record.placeName !== options.placeName) {
       return false;
     }
 

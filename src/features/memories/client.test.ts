@@ -21,6 +21,7 @@ describe("memoryClientApi", () => {
 
     await memoryClientApi.listMemories("ignored-user-id", {
       layer: "HOME",
+      placeName: "Chennai",
       status: "DRAFT",
       sensitivity: "STANDARD",
       query: "amina",
@@ -29,7 +30,7 @@ describe("memoryClientApi", () => {
     });
 
     expect(mockFetch).toHaveBeenCalledWith(
-      "/api/memories?layer=HOME&status=DRAFT&sensitivity=STANDARD&query=amina&dateFrom=1990-01-01&dateTo=1995-01-01",
+      "/api/memories?layer=HOME&placeName=Chennai&status=DRAFT&sensitivity=STANDARD&query=amina&dateFrom=1990-01-01&dateTo=1995-01-01",
       {
         headers: {
           Authorization: "Bearer token-123",

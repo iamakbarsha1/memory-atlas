@@ -24,6 +24,9 @@ export const memoryClientApi = {
     if (options?.layer) {
       params.set("layer", options.layer);
     }
+    if (options?.placeName) {
+      params.set("placeName", options.placeName);
+    }
     if (options?.status) {
       params.set("status", options.status);
     }

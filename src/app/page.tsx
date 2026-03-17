@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
@@ -24,7 +24,9 @@ import { SignupForm } from "@/components/auth/SignupForm";
 import { GlobeScene } from "@/components/globe/GlobeScene";
 import { MemoryWorkspace } from "@/components/memories/MemoryWorkspace";
 import { useAuth } from "@/context/AuthContext";
-import { buildPlaceHubs, demoPlaceMemories } from "@/features/place-hubs/utils";
+import { memoryClientApi } from "@/features/memories/client";
+import type { MemoryRecord } from "@/features/memories/types";
+import { buildPlaceHubs } from "@/features/place-hubs/utils";
 
 const memoryLayers = [
   {
@@ -92,11 +94,36 @@ const businessTracks = [
   },
 ];
 
-const placeHubPreviews = buildPlaceHubs(demoPlaceMemories).slice(0, 3);
-
 export default function LandingPage() {
   const [authMode, setAuthMode] = useState<"login" | "signup" | null>(null);
+  const [placePreviewMemories, setPlacePreviewMemories] = useState<MemoryRecord[]>([]);
   const { user, signOut } = useAuth();
+  const placeHubPreviews = useMemo(() => buildPlaceHubs(placePreviewMemories).slice(0, 3), [placePreviewMemories]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadPlacePreviews() {
+      if (!user) {
+        setPlacePreviewMemories([]);
+        return;
+      }
+
+      const result = await memoryClientApi.listMemories(user.id);
+
+      if (!active) {
+        return;
+      }
+
+      setPlacePreviewMemories(result.data);
+    }
+
+    void loadPlacePreviews();
+
+    return () => {
+      active = false;
+    };
+  }, [user]);
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
@@ -370,23 +397,31 @@ export default function LandingPage() {
           </div>
 
           <div className="mt-8 grid gap-6 md:grid-cols-3">
-            {placeHubPreviews.map((hub) => (
-              <Link
-                key={hub.slug}
-                href={`/places/${hub.slug}`}
-                className="rounded-[1.75rem] border border-white/10 bg-white/5 p-6 transition hover:bg-white/10"
-              >
-                <div className="text-xs uppercase tracking-[0.25em] text-primary/75">
-                  {hub.layers.join(" · ")}
-                </div>
-                <div className="mt-3 text-2xl font-semibold">{hub.placeName}</div>
-                <p className="mt-3 text-sm leading-relaxed text-white/60">{hub.summary}</p>
-                <div className="mt-5 flex items-center justify-between text-sm text-white/55">
-                  <span>{hub.totalRecords} mapped memories</span>
-                  <span>Open hub</span>
-                </div>
-              </Link>
-            ))}
+            {placeHubPreviews.length > 0 ? (
+              placeHubPreviews.map((hub) => (
+                <Link
+                  key={hub.slug}
+                  href={`/places/${hub.slug}`}
+                  className="rounded-[1.75rem] border border-white/10 bg-white/5 p-6 transition hover:bg-white/10"
+                >
+                  <div className="text-xs uppercase tracking-[0.25em] text-primary/75">
+                    {hub.layers.join(" · ")}
+                  </div>
+                  <div className="mt-3 text-2xl font-semibold">{hub.placeName}</div>
+                  <p className="mt-3 text-sm leading-relaxed text-white/60">{hub.summary}</p>
+                  <div className="mt-5 flex items-center justify-between text-sm text-white/55">
+                    <span>{hub.totalRecords} mapped memories</span>
+                    <span>Open hub</span>
+                  </div>
+                </Link>
+              ))
+            ) : (
+              <div className="md:col-span-3 rounded-[1.75rem] border border-white/10 bg-white/5 p-6 text-white/60">
+                {user
+                  ? "Add memories with place names to generate canonical place hubs from your stored atlas."
+                  : "Canonical place hubs become data-driven after sign-in, once your atlas has stored memories with place names."}
+              </div>
+            )}
           </div>
         </section>
 

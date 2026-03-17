@@ -13,6 +13,12 @@ export type PlaceHub = {
   relatedCollections: PartnerCollection[];
 };
 
+export type PlaceFacet = {
+  slug: string;
+  placeName: string;
+  totalRecords: number;
+};
+
 export function buildPlaceHubs(memories: MemoryRecord[]) {
   const grouped = new Map<string, MemoryRecord[]>();
 
@@ -52,6 +58,14 @@ export function buildPlaceHubs(memories: MemoryRecord[]) {
 
 export function getPlaceHubBySlug(memories: MemoryRecord[], slug: string) {
   return buildPlaceHubs(memories).find((hub) => hub.slug === slug) ?? null;
+}
+
+export function buildPlaceFacets(memories: MemoryRecord[]): PlaceFacet[] {
+  return buildPlaceHubs(memories).map((hub) => ({
+    slug: hub.slug,
+    placeName: hub.placeName,
+    totalRecords: hub.totalRecords,
+  }));
 }
 
 export function slugifyPlaceName(placeName: string) {
