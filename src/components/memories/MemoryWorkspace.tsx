@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Globe2, MapPinned, ShieldCheck } from "lucide-react";
-import { GlobeScene } from "@/components/globe/GlobeScene";
 import { Button } from "@/components/ui/button";
+import { MemoryMap } from "@/components/memories/MemoryMap";
 import { memoryClientApi } from "@/features/memories/client";
 import {
   memoryLayerValues,
@@ -74,6 +74,7 @@ export function MemoryWorkspace({
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [form, setForm] = useState(initialFormState);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [selectedMemoryId, setSelectedMemoryId] = useState<string | null>(null);
 
   async function refreshMemories() {
     setLoading(true);
@@ -86,6 +87,13 @@ export function MemoryWorkspace({
 
     setMemories(result.data ?? []);
     setLoadError(result.error);
+    setSelectedMemoryId((current) => {
+      if (!result.data?.length) {
+        return null;
+      }
+
+      return result.data.some((memory) => memory.id === current) ? current : result.data[0].id;
+    });
     setLoading(false);
   }
 
@@ -104,6 +112,13 @@ export function MemoryWorkspace({
 
       setMemories(result.data ?? []);
       setLoadError(result.error);
+      setSelectedMemoryId((current) => {
+        if (!result.data?.length) {
+          return null;
+        }
+
+        return result.data.some((memory) => memory.id === current) ? current : result.data[0].id;
+      });
       setLoading(false);
     }
 
@@ -166,6 +181,7 @@ export function MemoryWorkspace({
 
   function handleEdit(memory: MemoryRecord) {
     setEditingId(memory.id);
+    setSelectedMemoryId(memory.id);
     setSubmitError(null);
     setSubmitSuccess(null);
     setFieldErrors({});
@@ -496,8 +512,12 @@ export function MemoryWorkspace({
 
         <div className="mt-6 grid gap-5 xl:grid-cols-[1fr_0.9fr]">
           <div className="overflow-hidden rounded-[1.5rem] border border-white/10 bg-black">
-            <div className="h-72 border-b border-white/10">
-              <GlobeScene />
+            <div className="p-4">
+              <MemoryMap
+                memories={memories}
+                selectedMemoryId={selectedMemoryId}
+                onSelectMemory={setSelectedMemoryId}
+              />
             </div>
             <div className="grid gap-3 p-4 sm:grid-cols-2">
               {layerSummary.map((item) => (
@@ -528,7 +548,11 @@ export function MemoryWorkspace({
               memories.map((memory) => (
                 <article
                   key={memory.id}
-                  className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5"
+                  className={`rounded-[1.5rem] border p-5 transition ${
+                    selectedMemoryId === memory.id
+                      ? "border-primary/40 bg-primary/10"
+                      : "border-white/10 bg-white/5"
+                  }`}
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div>
@@ -559,6 +583,13 @@ export function MemoryWorkspace({
                     <span className="rounded-full bg-white/5 px-3 py-1">{memory.sourceType}</span>
                     <span className="rounded-full bg-white/5 px-3 py-1">{memory.type}</span>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedMemoryId(memory.id)}
+                    className="mt-4 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/75 transition hover:bg-white/10"
+                  >
+                    Focus On Map
+                  </button>
                   <div className="mt-4 flex gap-3">
                     <button
                       type="button"

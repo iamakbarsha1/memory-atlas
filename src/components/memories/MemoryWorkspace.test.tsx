@@ -44,7 +44,7 @@ describe("MemoryWorkspace", () => {
       />,
     );
 
-    await screen.findByText(/Khan Family Home/i);
+    await screen.findByRole("button", { name: /Edit Khan Family Home/i });
 
     fireEvent.click(screen.getByRole("button", { name: /^Home$/i }));
 
@@ -128,7 +128,7 @@ describe("MemoryWorkspace", () => {
         }),
       );
     });
-    await screen.findByText(/Grandfather Burial Plot/i);
+    await screen.findByRole("button", { name: /Edit Grandfather Burial Plot/i });
   });
 
   it("loads a record into the form and saves edits", async () => {
@@ -173,7 +173,7 @@ describe("MemoryWorkspace", () => {
       />,
     );
 
-    await screen.findByText(/Khan Family Home/i);
+    await screen.findByRole("button", { name: /Edit Khan Family Home/i });
     fireEvent.click(screen.getByRole("button", { name: /Edit Khan Family Home/i }));
 
     fireEvent.change(screen.getByLabelText(/Title/i), {
@@ -228,7 +228,7 @@ describe("MemoryWorkspace", () => {
       />,
     );
 
-    await screen.findByText(/Khan Family Home/i);
+    await screen.findByRole("button", { name: /Delete Khan Family Home/i });
     fireEvent.click(screen.getByRole("button", { name: /Delete Khan Family Home/i }));
 
     await waitFor(() => {
