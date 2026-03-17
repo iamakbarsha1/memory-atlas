@@ -1,4 +1,4 @@
-import { decimal, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { boolean, decimal, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
 export const memoryTypeEnum = pgEnum('memory_type', [
   'BURIAL',
@@ -35,6 +35,19 @@ export const memorySourceTypeEnum = pgEnum('memory_source_type', [
   'HISTORICAL',
   'PERSONAL',
   'OTHER',
+]);
+
+export const memorySensitivityEnum = pgEnum('memory_sensitivity', [
+  'STANDARD',
+  'SENSITIVE',
+  'MEMORIAL',
+]);
+
+export const memoryTrustLabelEnum = pgEnum('memory_trust_label', [
+  'UNVERIFIED',
+  'FAMILY_CONFIRMED',
+  'INSTITUTION_CONFIRMED',
+  'HISTORICALLY_VERIFIED',
 ]);
 
 export const users = pgTable('users', {
@@ -74,6 +87,13 @@ export const memories = pgTable('memories', {
   sourceName: text('source_name').notNull(),
   sourceUrl: text('source_url'),
   sourceNotes: text('source_notes'),
+  trustLabel: memoryTrustLabelEnum('trust_label').notNull().default('UNVERIFIED'),
+  sensitivity: memorySensitivityEnum('sensitivity').notNull().default('STANDARD'),
+  reviewNotes: text('review_notes'),
+  respectfulHandlingNotes: text('respectful_handling_notes'),
+  reviewedBy: text('reviewed_by'),
+  reviewedAt: timestamp('reviewed_at'),
+  hidePreciseLocation: boolean('hide_precise_location').notNull().default(false),
   visibility: memoryVisibilityEnum('visibility').notNull().default('PRIVATE'),
   status: memoryStatusEnum('status').notNull().default('DRAFT'),
   createdAt: timestamp('created_at').defaultNow().notNull(),

@@ -16,12 +16,21 @@ export const memorySourceTypeValues = [
   "PERSONAL",
   "OTHER",
 ] as const;
+export const memorySensitivityValues = ["STANDARD", "SENSITIVE", "MEMORIAL"] as const;
+export const memoryTrustLabelValues = [
+  "UNVERIFIED",
+  "FAMILY_CONFIRMED",
+  "INSTITUTION_CONFIRMED",
+  "HISTORICALLY_VERIFIED",
+] as const;
 
 export type MemoryLayer = (typeof memoryLayerValues)[number];
 export type MemoryType = (typeof memoryTypeValues)[number];
 export type MemoryVisibility = (typeof memoryVisibilityValues)[number];
 export type MemoryStatus = (typeof memoryStatusValues)[number];
 export type MemorySourceType = (typeof memorySourceTypeValues)[number];
+export type MemorySensitivity = (typeof memorySensitivityValues)[number];
+export type MemoryTrustLabel = (typeof memoryTrustLabelValues)[number];
 
 export type MemoryRecord = {
   id: string;
@@ -39,6 +48,13 @@ export type MemoryRecord = {
   sourceName: string;
   sourceUrl: string | null;
   sourceNotes: string | null;
+  trustLabel: MemoryTrustLabel;
+  sensitivity: MemorySensitivity;
+  reviewNotes: string | null;
+  respectfulHandlingNotes: string | null;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  hidePreciseLocation: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -46,6 +62,7 @@ export type MemoryRecord = {
 export type MemoryListFilters = {
   layer?: MemoryLayer;
   status?: MemoryStatus;
+  sensitivity?: MemorySensitivity;
   query?: string;
   dateFrom?: string;
   dateTo?: string;
@@ -66,6 +83,13 @@ export type CreateMemoryInput = {
   sourceName: string;
   sourceUrl?: string;
   sourceNotes?: string;
+  trustLabel: MemoryTrustLabel;
+  sensitivity: MemorySensitivity;
+  reviewNotes?: string;
+  respectfulHandlingNotes?: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  hidePreciseLocation: boolean;
   userId: string;
 };
 
@@ -90,6 +114,13 @@ export type DatabaseMemoryRecord = {
   source_name: string;
   source_url: string | null;
   source_notes: string | null;
+  trust_label: MemoryTrustLabel;
+  sensitivity: MemorySensitivity;
+  review_notes: string | null;
+  respectful_handling_notes: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  hide_precise_location: boolean | null;
   visibility: MemoryVisibility;
   status: MemoryStatus;
   created_at: string;

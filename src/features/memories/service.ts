@@ -38,6 +38,11 @@ export function validateMemoryInput(input: CreateMemoryInput): ValidationResult 
   const sourceUrl = input.sourceUrl?.trim() || "";
   const sourceNotes = input.sourceNotes?.trim() || "";
   const personName = input.personName?.trim() || "";
+  const reviewNotes = input.reviewNotes?.trim() || "";
+  const respectfulHandlingNotes = input.respectfulHandlingNotes?.trim() || "";
+  const reviewedBy = input.reviewedBy?.trim() || "";
+  const reviewedAt = input.reviewedAt?.trim() || "";
+  const isSensitiveRecord = input.sensitivity !== "STANDARD" || input.type === "BURIAL";
 
   if (!title) {
     errors.title = "Title is required.";
@@ -63,6 +68,32 @@ export function validateMemoryInput(input: CreateMemoryInput): ValidationResult 
     }
   }
 
+  if (input.status === "PUBLISHED" && input.trustLabel === "UNVERIFIED") {
+    errors.trustLabel = "Published records need a confirmed trust label.";
+  }
+
+  if (input.status !== "DRAFT" && !reviewNotes) {
+    errors.reviewNotes = "Review notes are required when sending a record beyond draft.";
+  }
+
+  if (isSensitiveRecord && !respectfulHandlingNotes) {
+    errors.respectfulHandlingNotes =
+      "Sensitive and memorial records require respectful handling guidance.";
+  }
+
+  if (
+    (input.type === "BURIAL" || input.sensitivity === "MEMORIAL") &&
+    input.visibility === "PUBLIC" &&
+    !input.hidePreciseLocation
+  ) {
+    errors.hidePreciseLocation =
+      "Public memorial and burial records must hide precise coordinates.";
+  }
+
+  if (reviewedAt && Number.isNaN(Date.parse(reviewedAt))) {
+    errors.reviewedAt = "Reviewed at must be a valid date.";
+  }
+
   if (Object.keys(errors).length > 0) {
     return { value: null, errors };
   }
@@ -76,6 +107,10 @@ export function validateMemoryInput(input: CreateMemoryInput): ValidationResult 
       sourceUrl,
       sourceNotes,
       personName,
+      reviewNotes,
+      respectfulHandlingNotes,
+      reviewedBy,
+      reviewedAt,
       metadata: personName ? { personName } : null,
     },
     errors,
@@ -142,6 +177,14 @@ export function createMemoryRepository(client: SupabaseTableClient): MemoryRepos
 
       if (options?.layer) {
         query = query.eq("layer", options.layer);
+      }
+
+      if (options?.status) {
+        query = query.eq("status", options.status);
+      }
+
+      if (options?.sensitivity) {
+        query = query.eq("sensitivity", options.sensitivity);
       }
 
       const { data, error } = await query;
@@ -243,6 +286,13 @@ export async function createMemoryRecord(
     source_name: value.sourceName,
     source_url: value.sourceUrl || null,
     source_notes: value.sourceNotes || null,
+    trust_label: value.trustLabel,
+    sensitivity: value.sensitivity,
+    review_notes: value.reviewNotes || null,
+    respectful_handling_notes: value.respectfulHandlingNotes || null,
+    reviewed_by: value.reviewedBy || null,
+    reviewed_at: value.reviewedAt ? new Date(value.reviewedAt).toISOString() : null,
+    hide_precise_location: value.hidePreciseLocation,
     visibility: value.visibility,
     status: value.status,
   };
@@ -301,6 +351,13 @@ export async function updateMemoryRecord(
     source_name: value.sourceName,
     source_url: value.sourceUrl || null,
     source_notes: value.sourceNotes || null,
+    trust_label: value.trustLabel,
+    sensitivity: value.sensitivity,
+    review_notes: value.reviewNotes || null,
+    respectful_handling_notes: value.respectfulHandlingNotes || null,
+    reviewed_by: value.reviewedBy || null,
+    reviewed_at: value.reviewedAt ? new Date(value.reviewedAt).toISOString() : null,
+    hide_precise_location: value.hidePreciseLocation,
     visibility: value.visibility,
     status: value.status,
   };
@@ -343,6 +400,13 @@ function mapDatabaseRecord(record: DatabaseMemoryRecord): MemoryRecord {
     sourceName: record.source_name,
     sourceUrl: record.source_url,
     sourceNotes: record.source_notes,
+    trustLabel: record.trust_label,
+    sensitivity: record.sensitivity,
+    reviewNotes: record.review_notes,
+    respectfulHandlingNotes: record.respectful_handling_notes,
+    reviewedBy: record.reviewed_by,
+    reviewedAt: record.reviewed_at,
+    hidePreciseLocation: Boolean(record.hide_precise_location),
     createdAt: record.created_at,
     updatedAt: record.updated_at,
   };
@@ -366,6 +430,10 @@ function applyMemoryFilters(records: MemoryRecord[], options?: MemoryListFilters
       return false;
     }
 
+    if (options.sensitivity && record.sensitivity !== options.sensitivity) {
+      return false;
+    }
+
     if (normalizedQuery) {
       const haystack = [
         record.title,
@@ -373,6 +441,8 @@ function applyMemoryFilters(records: MemoryRecord[], options?: MemoryListFilters
         record.personName,
         record.sourceName,
         record.sourceNotes,
+        record.reviewNotes,
+        record.respectfulHandlingNotes,
       ]
         .filter(Boolean)
         .join(" ")

@@ -6,30 +6,40 @@ vi.mock("@/components/globe/GlobeScene", () => ({
   GlobeScene: () => <div>Workspace Globe</div>,
 }));
 
+function makeMemory(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "1",
+    title: "Khan Family Home",
+    description: "Chennai",
+    layer: "HOME",
+    type: "HOME",
+    latitude: 13.0827,
+    longitude: 80.2707,
+    dateOccurred: "1992-06-14T00:00:00.000Z",
+    personName: "Amina Khan",
+    visibility: "FAMILY",
+    status: "DRAFT",
+    sourceType: "FAMILY",
+    sourceName: "Interview",
+    sourceUrl: null,
+    sourceNotes: "Recorded in 2024",
+    trustLabel: "FAMILY_CONFIRMED",
+    sensitivity: "STANDARD",
+    reviewNotes: "",
+    respectfulHandlingNotes: "",
+    reviewedBy: null,
+    reviewedAt: null,
+    hidePreciseLocation: false,
+    createdAt: "2026-03-17T10:00:00.000Z",
+    updatedAt: "2026-03-17T10:00:00.000Z",
+    ...overrides,
+  };
+}
+
 describe("MemoryWorkspace", () => {
   it("loads records and filters them by layer", async () => {
     const listMemories = vi.fn().mockResolvedValue({
-      data: [
-        {
-          id: "1",
-          title: "Khan Family Home",
-          description: "Chennai",
-          layer: "HOME",
-          type: "HOME",
-          latitude: 13.0827,
-          longitude: 80.2707,
-          dateOccurred: "1992-06-14T00:00:00.000Z",
-          personName: "Amina Khan",
-          visibility: "FAMILY",
-          status: "DRAFT",
-          sourceType: "FAMILY",
-          sourceName: "Interview",
-          sourceUrl: null,
-          sourceNotes: "Recorded in 2024",
-          createdAt: "2026-03-17T10:00:00.000Z",
-          updatedAt: "2026-03-17T10:00:00.000Z",
-        },
-      ],
+      data: [makeMemory()],
       error: null,
     });
     const createMemory = vi.fn();
@@ -52,6 +62,7 @@ describe("MemoryWorkspace", () => {
       expect(listMemories).toHaveBeenLastCalledWith("user-123", {
         layer: "HOME",
         status: undefined,
+        sensitivity: undefined,
         query: undefined,
         dateFrom: undefined,
         dateTo: undefined,
@@ -82,6 +93,9 @@ describe("MemoryWorkspace", () => {
     fireEvent.change(screen.getByLabelText(/Browse status/i), {
       target: { value: "DRAFT" },
     });
+    fireEvent.change(screen.getByLabelText(/Browse sensitivity/i), {
+      target: { value: "STANDARD" },
+    });
     fireEvent.change(screen.getByLabelText(/Date From Filter/i), {
       target: { value: "1990-01-01" },
     });
@@ -93,6 +107,7 @@ describe("MemoryWorkspace", () => {
       expect(listMemories).toHaveBeenLastCalledWith("user-123", {
         layer: undefined,
         status: "DRAFT",
+        sensitivity: "STANDARD",
         query: "amina",
         dateFrom: "1990-01-01",
         dateTo: "1995-01-01",
@@ -103,7 +118,7 @@ describe("MemoryWorkspace", () => {
   it("shows a person timeline and lets the user switch people", async () => {
     const listMemories = vi.fn().mockResolvedValue({
       data: [
-        {
+        makeMemory({
           id: "1",
           title: "Birthplace",
           description: "Madurai",
@@ -112,17 +127,12 @@ describe("MemoryWorkspace", () => {
           latitude: 9.9252,
           longitude: 78.1198,
           dateOccurred: "1988-02-03T00:00:00.000Z",
-          personName: "Amina Khan",
-          visibility: "FAMILY",
           status: "PUBLISHED",
-          sourceType: "FAMILY",
           sourceName: "Family record",
-          sourceUrl: null,
           sourceNotes: "Verified by family",
-          createdAt: "2026-03-17T10:00:00.000Z",
-          updatedAt: "2026-03-17T10:00:00.000Z",
-        },
-        {
+          reviewNotes: "Approved for publication",
+        }),
+        makeMemory({
           id: "2",
           title: "Burial Site",
           description: "Dubai",
@@ -133,14 +143,12 @@ describe("MemoryWorkspace", () => {
           dateOccurred: null,
           personName: "Yusuf Khan",
           visibility: "PRIVATE",
-          status: "DRAFT",
-          sourceType: "FAMILY",
           sourceName: "Family record",
-          sourceUrl: null,
           sourceNotes: "Section B",
-          createdAt: "2026-03-17T10:00:00.000Z",
-          updatedAt: "2026-03-17T10:00:00.000Z",
-        },
+          sensitivity: "MEMORIAL",
+          respectfulHandlingNotes: "Share only with close family context.",
+          hidePreciseLocation: true,
+        }),
       ],
       error: null,
     });
@@ -175,7 +183,7 @@ describe("MemoryWorkspace", () => {
       .mockResolvedValueOnce({ data: [], error: null })
       .mockResolvedValueOnce({
         data: [
-          {
+          makeMemory({
             id: "1",
             title: "Grandfather Burial Plot",
             description: "Section B",
@@ -186,14 +194,12 @@ describe("MemoryWorkspace", () => {
             dateOccurred: null,
             personName: "Yusuf Khan",
             visibility: "PRIVATE",
-            status: "DRAFT",
-            sourceType: "FAMILY",
             sourceName: "Family record",
-            sourceUrl: null,
             sourceNotes: "Verified by family",
-            createdAt: "2026-03-17T10:00:00.000Z",
-            updatedAt: "2026-03-17T10:00:00.000Z",
-          },
+            sensitivity: "MEMORIAL",
+            respectfulHandlingNotes: "Coordinate sharing should stay approximate.",
+            hidePreciseLocation: true,
+          }),
         ],
         error: null,
       });
@@ -233,6 +239,16 @@ describe("MemoryWorkspace", () => {
     fireEvent.change(screen.getByLabelText(/Source Notes/i), {
       target: { value: "Verified by family" },
     });
+    fireEvent.change(screen.getByLabelText(/Trust Label/i), {
+      target: { value: "FAMILY_CONFIRMED" },
+    });
+    fireEvent.change(screen.getAllByRole("combobox", { name: /Sensitivity/i })[1], {
+      target: { value: "MEMORIAL" },
+    });
+    fireEvent.change(screen.getByLabelText(/Respectful Handling Notes/i), {
+      target: { value: "Coordinate sharing should stay approximate." },
+    });
+    fireEvent.click(screen.getByLabelText(/Hide Precise Location/i));
 
     fireEvent.click(screen.getByRole("button", { name: /Save Draft Memory/i }));
 
@@ -240,6 +256,9 @@ describe("MemoryWorkspace", () => {
       expect(createMemory).toHaveBeenCalledWith(
         expect.objectContaining({
           title: "Grandfather Burial Plot",
+          trustLabel: "FAMILY_CONFIRMED",
+          sensitivity: "MEMORIAL",
+          hidePreciseLocation: true,
           userId: "user-123",
         }),
       );
@@ -248,25 +267,7 @@ describe("MemoryWorkspace", () => {
   });
 
   it("loads a record into the form and saves edits", async () => {
-    const memory = {
-      id: "1",
-      title: "Khan Family Home",
-      description: "Chennai",
-      layer: "HOME",
-      type: "HOME",
-      latitude: 13.0827,
-      longitude: 80.2707,
-      dateOccurred: "1992-06-14T00:00:00.000Z",
-      personName: "Amina Khan",
-      visibility: "FAMILY",
-      status: "DRAFT",
-      sourceType: "FAMILY",
-      sourceName: "Interview",
-      sourceUrl: null,
-      sourceNotes: "Recorded in 2024",
-      createdAt: "2026-03-17T10:00:00.000Z",
-      updatedAt: "2026-03-17T10:00:00.000Z",
-    };
+    const memory = makeMemory();
     const listMemories = vi
       .fn()
       .mockResolvedValueOnce({ data: [memory], error: null })
@@ -309,25 +310,7 @@ describe("MemoryWorkspace", () => {
   });
 
   it("deletes a record and refreshes the list", async () => {
-    const memory = {
-      id: "1",
-      title: "Khan Family Home",
-      description: "Chennai",
-      layer: "HOME",
-      type: "HOME",
-      latitude: 13.0827,
-      longitude: 80.2707,
-      dateOccurred: "1992-06-14T00:00:00.000Z",
-      personName: "Amina Khan",
-      visibility: "FAMILY",
-      status: "DRAFT",
-      sourceType: "FAMILY",
-      sourceName: "Interview",
-      sourceUrl: null,
-      sourceNotes: "Recorded in 2024",
-      createdAt: "2026-03-17T10:00:00.000Z",
-      updatedAt: "2026-03-17T10:00:00.000Z",
-    };
+    const memory = makeMemory();
     const listMemories = vi
       .fn()
       .mockResolvedValueOnce({ data: [memory], error: null })

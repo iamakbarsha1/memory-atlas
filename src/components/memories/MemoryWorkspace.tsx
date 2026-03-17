@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Globe2, MapPinned, ShieldCheck } from "lucide-react";
+import { AlertTriangle, Globe2, MapPinned, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FamilyAtlas } from "@/components/memories/FamilyAtlas";
 import { MemoryMap } from "@/components/memories/MemoryMap";
@@ -9,8 +9,10 @@ import { MemoryTimeline } from "@/components/memories/MemoryTimeline";
 import { memoryClientApi } from "@/features/memories/client";
 import {
   memoryLayerValues,
+  memorySensitivityValues,
   memorySourceTypeValues,
   memoryStatusValues,
+  memoryTrustLabelValues,
   memoryTypeValues,
   memoryVisibilityValues,
   type CreateMemoryInput,
@@ -45,6 +47,13 @@ const layerLabels: Record<MemoryLayer, string> = {
   HISTORY: "History",
 };
 
+const trustTone = {
+  UNVERIFIED: "border-amber-400/30 bg-amber-500/10 text-amber-100",
+  FAMILY_CONFIRMED: "border-sky-400/30 bg-sky-500/10 text-sky-100",
+  INSTITUTION_CONFIRMED: "border-emerald-400/30 bg-emerald-500/10 text-emerald-100",
+  HISTORICALLY_VERIFIED: "border-violet-400/30 bg-violet-500/10 text-violet-100",
+} as const;
+
 const initialFormState: Omit<CreateMemoryInput, "userId"> = {
   title: "",
   description: "",
@@ -60,6 +69,13 @@ const initialFormState: Omit<CreateMemoryInput, "userId"> = {
   sourceName: "",
   sourceUrl: "",
   sourceNotes: "",
+  trustLabel: "UNVERIFIED",
+  sensitivity: "STANDARD",
+  reviewNotes: "",
+  respectfulHandlingNotes: "",
+  reviewedBy: "",
+  reviewedAt: "",
+  hidePreciseLocation: false,
 };
 
 export function MemoryWorkspace({
@@ -82,11 +98,13 @@ export function MemoryWorkspace({
   const [browseFilters, setBrowseFilters] = useState<{
     query: string;
     status: "ALL" | (typeof memoryStatusValues)[number];
+    sensitivity: "ALL" | (typeof memorySensitivityValues)[number];
     dateFrom: string;
     dateTo: string;
   }>({
     query: "",
     status: "ALL",
+    sensitivity: "ALL",
     dateFrom: "",
     dateTo: "",
   });
@@ -95,6 +113,7 @@ export function MemoryWorkspace({
     return {
       layer: selectedLayer === "ALL" ? undefined : selectedLayer,
       status: browseFilters.status === "ALL" ? undefined : browseFilters.status,
+      sensitivity: browseFilters.sensitivity === "ALL" ? undefined : browseFilters.sensitivity,
       query: browseFilters.query.trim() || undefined,
       dateFrom: browseFilters.dateFrom || undefined,
       dateTo: browseFilters.dateTo || undefined,
@@ -185,6 +204,14 @@ export function MemoryWorkspace({
     }));
   }, [memories]);
 
+  const reviewSummary = useMemo(() => {
+    const reviewCount = memories.filter((memory) => memory.status === "REVIEW").length;
+    const sensitiveCount = memories.filter((memory) => memory.sensitivity !== "STANDARD").length;
+    const memorialCount = memories.filter((memory) => memory.sensitivity === "MEMORIAL").length;
+
+    return { reviewCount, sensitiveCount, memorialCount };
+  }, [memories]);
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
@@ -222,6 +249,9 @@ export function MemoryWorkspace({
       visibility: form.visibility,
       status: form.status,
       sourceType: form.sourceType,
+      trustLabel: form.trustLabel,
+      sensitivity: form.sensitivity,
+      hidePreciseLocation: form.hidePreciseLocation,
     });
     setEditingId(null);
     await refreshMemories();
@@ -250,6 +280,13 @@ export function MemoryWorkspace({
       sourceName: memory.sourceName,
       sourceUrl: memory.sourceUrl ?? "",
       sourceNotes: memory.sourceNotes ?? "",
+      trustLabel: memory.trustLabel,
+      sensitivity: memory.sensitivity,
+      reviewNotes: memory.reviewNotes ?? "",
+      respectfulHandlingNotes: memory.respectfulHandlingNotes ?? "",
+      reviewedBy: memory.reviewedBy ?? "",
+      reviewedAt: memory.reviewedAt ? memory.reviewedAt.slice(0, 10) : "",
+      hidePreciseLocation: memory.hidePreciseLocation,
     });
   }
 
@@ -357,7 +394,7 @@ export function MemoryWorkspace({
           </div>
         </div>
 
-        <div className="mt-6 grid gap-4 rounded-[1.5rem] border border-white/10 bg-white/5 p-4 md:grid-cols-4">
+        <div className="mt-6 grid gap-4 rounded-[1.5rem] border border-white/10 bg-white/5 p-4 md:grid-cols-5">
           <Field label="Search">
             <input
               aria-label="Search memories"
@@ -389,6 +426,27 @@ export function MemoryWorkspace({
             </select>
           </Field>
 
+          <Field label="Sensitivity">
+            <select
+              aria-label="Browse sensitivity"
+              value={browseFilters.sensitivity}
+              onChange={(event) =>
+                handleBrowseFilterChange(
+                  "sensitivity",
+                  event.target.value as "ALL" | (typeof memorySensitivityValues)[number],
+                )
+              }
+              className="w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-primary"
+            >
+              <option value="ALL">All sensitivity</option>
+              {memorySensitivityValues.map((value) => (
+                <option key={value} value={value}>
+                  {formatEnumLabel(value)}
+                </option>
+              ))}
+            </select>
+          </Field>
+
           <Field label="Date From">
             <input
               aria-label="Date From Filter"
@@ -408,6 +466,24 @@ export function MemoryWorkspace({
               className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none transition focus:border-primary"
             />
           </Field>
+        </div>
+
+        <div className="mt-4 grid gap-4 md:grid-cols-3">
+          <GovernanceStat
+            label="Awaiting review"
+            value={reviewSummary.reviewCount}
+            helper="Records currently held in moderation flow."
+          />
+          <GovernanceStat
+            label="Sensitive records"
+            value={reviewSummary.sensitiveCount}
+            helper="Records carrying respectful handling guidance."
+          />
+          <GovernanceStat
+            label="Memorial records"
+            value={reviewSummary.memorialCount}
+            helper="Memorial and burial records with extra privacy needs."
+          />
         </div>
 
         <form className="mt-6 grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
@@ -534,6 +610,43 @@ export function MemoryWorkspace({
             </select>
           </Field>
 
+          <Field label="Trust Label" error={fieldErrors.trustLabel}>
+            <select
+              aria-label="Trust Label"
+              value={form.trustLabel}
+              onChange={(event) =>
+                handleFieldChange("trustLabel", event.target.value as CreateMemoryInput["trustLabel"])
+              }
+              className="w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-primary"
+            >
+              {memoryTrustLabelValues.map((value) => (
+                <option key={value} value={value}>
+                  {formatEnumLabel(value)}
+                </option>
+              ))}
+            </select>
+          </Field>
+
+          <Field label="Sensitivity">
+            <select
+              aria-label="Sensitivity"
+              value={form.sensitivity}
+              onChange={(event) =>
+                handleFieldChange(
+                  "sensitivity",
+                  event.target.value as CreateMemoryInput["sensitivity"],
+                )
+              }
+              className="w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-primary"
+            >
+              {memorySensitivityValues.map((value) => (
+                <option key={value} value={value}>
+                  {formatEnumLabel(value)}
+                </option>
+              ))}
+            </select>
+          </Field>
+
           <Field label="Date Occurred">
             <input
               aria-label="Date Occurred"
@@ -584,6 +697,71 @@ export function MemoryWorkspace({
             />
           </Field>
 
+          <Field label="Review Notes" error={fieldErrors.reviewNotes} className="md:col-span-2">
+            <textarea
+              aria-label="Review Notes"
+              value={form.reviewNotes}
+              onChange={(event) => handleFieldChange("reviewNotes", event.target.value)}
+              className="min-h-24 w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-primary"
+              placeholder="Why this record is draft, under review, or ready to publish."
+            />
+          </Field>
+
+          <Field
+            label="Respectful Handling Notes"
+            error={fieldErrors.respectfulHandlingNotes}
+            className="md:col-span-2"
+          >
+            <textarea
+              aria-label="Respectful Handling Notes"
+              value={form.respectfulHandlingNotes}
+              onChange={(event) => handleFieldChange("respectfulHandlingNotes", event.target.value)}
+              className="min-h-24 w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-primary"
+              placeholder="Guidance for memorial, burial, or otherwise sensitive content."
+            />
+          </Field>
+
+          <Field label="Reviewed By">
+            <input
+              aria-label="Reviewed By"
+              value={form.reviewedBy}
+              onChange={(event) => handleFieldChange("reviewedBy", event.target.value)}
+              className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-primary"
+              placeholder="Archivist or institution"
+            />
+          </Field>
+
+          <Field label="Reviewed At" error={fieldErrors.reviewedAt}>
+            <input
+              aria-label="Reviewed At"
+              type="date"
+              value={form.reviewedAt}
+              onChange={(event) => handleFieldChange("reviewedAt", event.target.value)}
+              className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-primary"
+            />
+          </Field>
+
+          <label className="md:col-span-2 flex items-start gap-3 rounded-[1.5rem] border border-white/10 bg-white/5 px-4 py-4 text-sm text-white/72">
+            <input
+              aria-label="Hide Precise Location"
+              type="checkbox"
+              checked={form.hidePreciseLocation}
+              onChange={(event) => handleFieldChange("hidePreciseLocation", event.target.checked)}
+              className="mt-1 h-4 w-4 rounded border-white/20 bg-slate-950 text-primary"
+            />
+            <span>
+              Hide precise location in public-facing details.
+              <span className="mt-1 block text-xs text-white/50">
+                Required for public burial and memorial records.
+              </span>
+              {fieldErrors.hidePreciseLocation ? (
+                <span className="mt-2 block text-sm text-red-300">
+                  {fieldErrors.hidePreciseLocation}
+                </span>
+              ) : null}
+            </span>
+          </label>
+
           {(submitError || submitSuccess) && (
             <div
               className={`md:col-span-2 rounded-2xl border px-4 py-3 text-sm ${
@@ -599,7 +777,7 @@ export function MemoryWorkspace({
           <div className="md:col-span-2 flex items-center justify-between gap-4">
             <div className="flex items-center gap-2 text-sm text-white/55">
               <ShieldCheck className="h-4 w-4 text-primary" />
-              Records include moderation-ready status and visibility fields.
+              Records now carry review, trust, and respectful-display controls.
             </div>
             <div className="flex items-center gap-3">
               {editingId ? (
@@ -730,7 +908,29 @@ export function MemoryWorkspace({
                     <span className="rounded-full bg-white/5 px-3 py-1">{memory.visibility}</span>
                     <span className="rounded-full bg-white/5 px-3 py-1">{memory.sourceType}</span>
                     <span className="rounded-full bg-white/5 px-3 py-1">{memory.type}</span>
+                    <span className={`rounded-full border px-3 py-1 ${trustTone[memory.trustLabel]}`}>
+                      {formatEnumLabel(memory.trustLabel)}
+                    </span>
+                    <span className="rounded-full bg-white/5 px-3 py-1">
+                      {formatEnumLabel(memory.sensitivity)}
+                    </span>
                   </div>
+                  {memory.sensitivity !== "STANDARD" ? (
+                    <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-50/85">
+                      <div className="flex items-center gap-2 font-medium">
+                        <AlertTriangle className="h-4 w-4" />
+                        Respectful handling guidance
+                      </div>
+                      <p className="mt-2 leading-relaxed">
+                        {memory.respectfulHandlingNotes || "Sensitive record. Review before sharing."}
+                      </p>
+                    </div>
+                  ) : null}
+                  {memory.reviewNotes ? (
+                    <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white/60">
+                      {memory.reviewNotes}
+                    </div>
+                  ) : null}
                   <button
                     type="button"
                     onClick={() => setSelectedMemoryId(memory.id)}
@@ -808,4 +1008,26 @@ function FilterButton({
       {label}
     </button>
   );
+}
+
+function GovernanceStat({
+  label,
+  value,
+  helper,
+}: {
+  label: string;
+  value: number;
+  helper: string;
+}) {
+  return (
+    <div className="rounded-[1.5rem] border border-white/10 bg-white/5 px-5 py-4">
+      <div className="text-xs font-semibold uppercase tracking-[0.25em] text-white/45">{label}</div>
+      <div className="mt-2 text-3xl font-semibold text-white">{value}</div>
+      <p className="mt-2 text-sm text-white/55">{helper}</p>
+    </div>
+  );
+}
+
+function formatEnumLabel(value: string) {
+  return value.replaceAll("_", " ").toLowerCase().replace(/\b\w/g, (match) => match.toUpperCase());
 }

@@ -5,7 +5,13 @@ import {
   updateMemoryRecord,
   type MemoryRepository,
 } from "./service";
-import type { CreateMemoryInput, MemoryLayer, MemoryStatus, UpdateMemoryInput } from "./types";
+import type {
+  CreateMemoryInput,
+  MemoryLayer,
+  MemorySensitivity,
+  MemoryStatus,
+  UpdateMemoryInput,
+} from "./types";
 
 export type MemoryRequestDeps = {
   isConfigured: boolean;
@@ -27,6 +33,7 @@ export async function listMemoriesForRequest(
     layer?: string | null;
     query?: string | null;
     status?: string | null;
+    sensitivity?: string | null;
     dateFrom?: string | null;
     dateTo?: string | null;
   },
@@ -49,11 +56,13 @@ export async function listMemoriesForRequest(
 
   const layer = coerceLayer(request.layer);
   const status = coerceStatus(request.status);
+  const sensitivity = coerceSensitivity(request.sensitivity);
   const result = await listMemoryRecords(
     auth.userId,
     {
       layer,
       status,
+      sensitivity,
       query: request.query ?? undefined,
       dateFrom: request.dateFrom ?? undefined,
       dateTo: request.dateTo ?? undefined,
@@ -120,6 +129,13 @@ export async function createMemoryForRequest(
       sourceName: body.sourceName ?? "",
       sourceUrl: body.sourceUrl,
       sourceNotes: body.sourceNotes,
+      trustLabel: (body.trustLabel as CreateMemoryInput["trustLabel"]) ?? "UNVERIFIED",
+      sensitivity: (body.sensitivity as CreateMemoryInput["sensitivity"]) ?? "STANDARD",
+      reviewNotes: body.reviewNotes,
+      respectfulHandlingNotes: body.respectfulHandlingNotes,
+      reviewedBy: body.reviewedBy,
+      reviewedAt: body.reviewedAt,
+      hidePreciseLocation: Boolean(body.hidePreciseLocation),
       userId: auth.userId,
     },
     deps.repository,
@@ -187,6 +203,13 @@ export async function updateMemoryForRequest(
       sourceName: body.sourceName ?? "",
       sourceUrl: body.sourceUrl,
       sourceNotes: body.sourceNotes,
+      trustLabel: (body.trustLabel as UpdateMemoryInput["trustLabel"]) ?? "UNVERIFIED",
+      sensitivity: (body.sensitivity as UpdateMemoryInput["sensitivity"]) ?? "STANDARD",
+      reviewNotes: body.reviewNotes,
+      respectfulHandlingNotes: body.respectfulHandlingNotes,
+      reviewedBy: body.reviewedBy,
+      reviewedAt: body.reviewedAt,
+      hidePreciseLocation: Boolean(body.hidePreciseLocation),
       userId: auth.userId,
     },
     deps.repository,
@@ -298,6 +321,18 @@ function coerceLayer(layer: string | null | undefined): MemoryLayer | undefined 
 function coerceStatus(status: string | null | undefined): MemoryStatus | undefined {
   if (status === "DRAFT" || status === "REVIEW" || status === "PUBLISHED" || status === "ARCHIVED") {
     return status;
+  }
+
+  return undefined;
+}
+
+function coerceSensitivity(sensitivity: string | null | undefined): MemorySensitivity | undefined {
+  if (
+    sensitivity === "STANDARD" ||
+    sensitivity === "SENSITIVE" ||
+    sensitivity === "MEMORIAL"
+  ) {
+    return sensitivity;
   }
 
   return undefined;

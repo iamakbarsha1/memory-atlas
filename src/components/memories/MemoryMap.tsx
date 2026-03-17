@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPinned, Orbit, ScrollText } from "lucide-react";
+import { AlertTriangle, MapPinned, Orbit, ScrollText, ShieldCheck } from "lucide-react";
 import type { MemoryRecord } from "@/features/memories/types";
 
 const layerStyles = {
@@ -20,6 +20,13 @@ const layerStyles = {
     dot: "bg-slate-200 shadow-[0_0_0_6px_rgba(255,255,255,0.12)]",
     label: "text-slate-200",
   },
+} as const;
+
+const trustLabelTone = {
+  UNVERIFIED: "border-amber-400/30 bg-amber-500/10 text-amber-100",
+  FAMILY_CONFIRMED: "border-sky-400/30 bg-sky-500/10 text-sky-100",
+  INSTITUTION_CONFIRMED: "border-emerald-400/30 bg-emerald-500/10 text-emerald-100",
+  HISTORICALLY_VERIFIED: "border-violet-400/30 bg-violet-500/10 text-violet-100",
 } as const;
 
 export function MemoryMap({
@@ -123,9 +130,7 @@ export function MemoryMap({
             <div className="mt-5 space-y-3 text-sm text-white/72">
               <div className="flex items-center gap-3">
                 <MapPinned className="h-4 w-4 text-primary" />
-                <span>
-                  {selectedMemory.latitude.toFixed(4)}, {selectedMemory.longitude.toFixed(4)}
-                </span>
+                <span>{formatCoordinates(selectedMemory)}</span>
               </div>
               <div className="flex items-center gap-3">
                 <Orbit className="h-4 w-4 text-primary" />
@@ -135,17 +140,51 @@ export function MemoryMap({
                 <ScrollText className="h-4 w-4 text-primary" />
                 <span>{formatSourceLabel(selectedMemory)}</span>
               </div>
+              <div className="flex items-center gap-3">
+                <ShieldCheck className="h-4 w-4 text-primary" />
+                <span>{formatTrustLabel(selectedMemory.trustLabel)}</span>
+              </div>
             </div>
 
             <div className="mt-5 flex flex-wrap gap-2 text-xs text-white/60">
               <span className="rounded-full bg-white/6 px-3 py-1">{selectedMemory.visibility}</span>
               <span className="rounded-full bg-white/6 px-3 py-1">{selectedMemory.type}</span>
               <span className="rounded-full bg-white/6 px-3 py-1">{selectedMemory.sourceType}</span>
+              <span
+                className={`rounded-full border px-3 py-1 ${trustLabelTone[selectedMemory.trustLabel]}`}
+              >
+                {formatTrustLabel(selectedMemory.trustLabel)}
+              </span>
+              <span className="rounded-full bg-white/6 px-3 py-1">
+                {formatSensitivityLabel(selectedMemory.sensitivity)}
+              </span>
             </div>
+
+            {selectedMemory.sensitivity !== "STANDARD" ? (
+              <div className="mt-6 rounded-[1.25rem] border border-amber-400/20 bg-amber-500/10 p-4">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.25em] text-amber-100/90">
+                  <AlertTriangle className="h-4 w-4" />
+                  Respectful Display
+                </div>
+                <p className="mt-3 text-sm leading-relaxed text-amber-50/85">
+                  {selectedMemory.respectfulHandlingNotes ||
+                    "This record is marked for respectful handling. Share context carefully."}
+                </p>
+              </div>
+            ) : null}
 
             <div className="mt-6 rounded-[1.25rem] border border-white/10 bg-black/20 p-4">
               <div className="text-xs font-semibold uppercase tracking-[0.25em] text-white/40">
-                Detail Notes
+                Review Notes
+              </div>
+              <p className="mt-3 text-sm leading-relaxed text-white/60">
+                {selectedMemory.reviewNotes || "No moderation review notes yet for this memory."}
+              </p>
+            </div>
+
+            <div className="mt-4 rounded-[1.25rem] border border-white/10 bg-black/20 p-4">
+              <div className="text-xs font-semibold uppercase tracking-[0.25em] text-white/40">
+                Source Notes
               </div>
               <p className="mt-3 text-sm leading-relaxed text-white/60">
                 {selectedMemory.sourceNotes || "No source notes yet for this memory."}
@@ -178,4 +217,20 @@ function formatSourceLabel(memory: MemoryRecord) {
   }
 
   return memory.sourceName;
+}
+
+function formatTrustLabel(value: MemoryRecord["trustLabel"]) {
+  return value.replaceAll("_", " ").toLowerCase().replace(/\b\w/g, (match) => match.toUpperCase());
+}
+
+function formatSensitivityLabel(value: MemoryRecord["sensitivity"]) {
+  return value.replaceAll("_", " ").toLowerCase().replace(/\b\w/g, (match) => match.toUpperCase());
+}
+
+function formatCoordinates(memory: MemoryRecord) {
+  if (memory.hidePreciseLocation) {
+    return `Approx. ${memory.latitude.toFixed(1)}, ${memory.longitude.toFixed(1)} (precise point hidden)`;
+  }
+
+  return `${memory.latitude.toFixed(4)}, ${memory.longitude.toFixed(4)}`;
 }

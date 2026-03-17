@@ -27,6 +27,9 @@ export const memoryClientApi = {
     if (options?.status) {
       params.set("status", options.status);
     }
+    if (options?.sensitivity) {
+      params.set("sensitivity", options.sensitivity);
+    }
     if (options?.query) {
       params.set("query", options.query);
     }

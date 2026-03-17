@@ -20,6 +20,13 @@ const memories: MemoryRecord[] = [
     sourceName: "Interview",
     sourceUrl: null,
     sourceNotes: "Recorded in 2024",
+    trustLabel: "FAMILY_CONFIRMED",
+    sensitivity: "STANDARD",
+    reviewNotes: "",
+    respectfulHandlingNotes: "",
+    reviewedBy: null,
+    reviewedAt: null,
+    hidePreciseLocation: false,
     createdAt: "2026-03-17T10:00:00.000Z",
     updatedAt: "2026-03-17T10:00:00.000Z",
   },
@@ -39,6 +46,13 @@ const memories: MemoryRecord[] = [
     sourceName: "Family record",
     sourceUrl: null,
     sourceNotes: "Verified by family",
+    trustLabel: "FAMILY_CONFIRMED",
+    sensitivity: "MEMORIAL",
+    reviewNotes: "Family review complete",
+    respectfulHandlingNotes: "Share exact grave details only with immediate family.",
+    reviewedBy: "Archivist",
+    reviewedAt: "2026-03-17T10:00:00.000Z",
+    hidePreciseLocation: true,
     createdAt: "2026-03-17T10:00:00.000Z",
     updatedAt: "2026-03-17T10:00:00.000Z",
   },
@@ -52,6 +66,7 @@ describe("MemoryMap", () => {
     expect(screen.getByRole("button", { name: /View Grandfather Burial Plot on map/i })).toBeInTheDocument();
     expect(screen.getByText(/Amina Khan/i)).toBeInTheDocument();
     expect(screen.getByText(/Oral history interview/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Family Confirmed/i)).toHaveLength(2);
   });
 
   it("calls onSelectMemory when a marker is pressed", () => {

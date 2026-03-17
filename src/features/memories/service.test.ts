@@ -23,6 +23,13 @@ const baseInput: CreateMemoryInput = {
   sourceName: "  Oral history interview ",
   sourceNotes: "  Recorded in 2024 ",
   personName: "  Amina Khan ",
+  trustLabel: "FAMILY_CONFIRMED",
+  sensitivity: "STANDARD",
+  reviewNotes: "",
+  respectfulHandlingNotes: "",
+  reviewedBy: "",
+  reviewedAt: "",
+  hidePreciseLocation: false,
   userId: "user-123",
 };
 
@@ -43,6 +50,13 @@ const dbRecord: DatabaseMemoryRecord = {
   source_name: "Oral history interview",
   source_url: null,
   source_notes: "Recorded in 2024",
+  trust_label: "FAMILY_CONFIRMED",
+  sensitivity: "STANDARD",
+  review_notes: null,
+  respectful_handling_notes: null,
+  reviewed_by: null,
+  reviewed_at: null,
+  hide_precise_location: false,
   visibility: "FAMILY",
   status: "DRAFT",
   created_at: "2026-03-17T10:00:00.000Z",
@@ -68,6 +82,7 @@ describe("validateMemoryInput", () => {
       description: "Three generations lived here.",
       sourceName: "Oral history interview",
       sourceNotes: "Recorded in 2024",
+      trustLabel: "FAMILY_CONFIRMED",
       metadata: { personName: "Amina Khan" },
     });
   });
@@ -87,6 +102,27 @@ describe("validateMemoryInput", () => {
       sourceUrl: "Source URL must be a valid URL.",
     });
   });
+
+  it("requires stronger governance data for published and sensitive records", () => {
+    const result = validateMemoryInput({
+      ...baseInput,
+      status: "PUBLISHED",
+      trustLabel: "UNVERIFIED",
+      sensitivity: "MEMORIAL",
+      respectfulHandlingNotes: "",
+      visibility: "PUBLIC",
+      hidePreciseLocation: false,
+    });
+
+    expect(result.value).toBeNull();
+    expect(result.errors).toMatchObject({
+      trustLabel: "Published records need a confirmed trust label.",
+      reviewNotes: "Review notes are required when sending a record beyond draft.",
+      respectfulHandlingNotes:
+        "Sensitive and memorial records require respectful handling guidance.",
+      hidePreciseLocation: "Public memorial and burial records must hide precise coordinates.",
+    });
+  });
 });
 
 describe("createMemoryRecord", () => {
@@ -101,6 +137,8 @@ describe("createMemoryRecord", () => {
         metadata: { personName: "Amina Khan" },
         source_name: "Oral history interview",
         visibility: "FAMILY",
+        trust_label: "FAMILY_CONFIRMED",
+        sensitivity: "STANDARD",
       }),
     );
     expect(result.error).toBeNull();
@@ -146,6 +184,7 @@ describe("listMemoryRecords", () => {
       {
         query: "amina",
         status: "DRAFT",
+        sensitivity: "STANDARD",
         dateFrom: "1990-01-01",
         dateTo: "1995-01-01",
       },

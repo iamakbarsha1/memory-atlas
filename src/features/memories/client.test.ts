@@ -22,17 +22,18 @@ describe("memoryClientApi", () => {
     await memoryClientApi.listMemories("ignored-user-id", {
       layer: "HOME",
       status: "DRAFT",
+      sensitivity: "STANDARD",
       query: "amina",
       dateFrom: "1990-01-01",
       dateTo: "1995-01-01",
     });
 
     expect(mockFetch).toHaveBeenCalledWith(
-      "/api/memories?layer=HOME&status=DRAFT&query=amina&dateFrom=1990-01-01&dateTo=1995-01-01",
+      "/api/memories?layer=HOME&status=DRAFT&sensitivity=STANDARD&query=amina&dateFrom=1990-01-01&dateTo=1995-01-01",
       {
-      headers: {
-        Authorization: "Bearer token-123",
-      },
+        headers: {
+          Authorization: "Bearer token-123",
+        },
       },
     );
   });
@@ -52,6 +53,9 @@ describe("memoryClientApi", () => {
       status: "DRAFT",
       sourceType: "FAMILY",
       sourceName: "Interview",
+      trustLabel: "UNVERIFIED",
+      sensitivity: "STANDARD",
+      hidePreciseLocation: false,
       userId: "ignored",
     });
 
@@ -79,6 +83,12 @@ describe("memoryClientApi", () => {
       status: "DRAFT",
       sourceType: "FAMILY",
       sourceName: "Interview",
+      trustLabel: "FAMILY_CONFIRMED",
+      sensitivity: "STANDARD",
+      reviewNotes: "Checked against interview log",
+      reviewedBy: "Archivist",
+      reviewedAt: "2026-03-17",
+      hidePreciseLocation: false,
       userId: "ignored",
     });
 
@@ -98,6 +108,12 @@ describe("memoryClientApi", () => {
         status: "DRAFT",
         sourceType: "FAMILY",
         sourceName: "Interview",
+        trustLabel: "FAMILY_CONFIRMED",
+        sensitivity: "STANDARD",
+        reviewNotes: "Checked against interview log",
+        reviewedBy: "Archivist",
+        reviewedAt: "2026-03-17",
+        hidePreciseLocation: false,
       }),
     });
   });
