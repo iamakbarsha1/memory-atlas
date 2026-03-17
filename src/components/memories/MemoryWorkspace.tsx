@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Globe2, MapPinned, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MemoryMap } from "@/components/memories/MemoryMap";
+import { MemoryTimeline } from "@/components/memories/MemoryTimeline";
 import { memoryClientApi } from "@/features/memories/client";
 import {
   memoryLayerValues,
@@ -76,6 +77,7 @@ export function MemoryWorkspace({
   const [form, setForm] = useState(initialFormState);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedMemoryId, setSelectedMemoryId] = useState<string | null>(null);
+  const [selectedPerson, setSelectedPerson] = useState<string | null>(null);
   const [browseFilters, setBrowseFilters] = useState<{
     query: string;
     status: "ALL" | (typeof memoryStatusValues)[number];
@@ -113,6 +115,21 @@ export function MemoryWorkspace({
 
       return result.data.some((memory) => memory.id === current) ? current : result.data[0].id;
     });
+    setSelectedPerson((current) => {
+      const people = Array.from(
+        new Set(
+          (result.data ?? [])
+            .map((memory) => memory.personName?.trim())
+            .filter((value): value is string => Boolean(value)),
+        ),
+      );
+
+      if (people.length === 0) {
+        return null;
+      }
+
+      return current && people.includes(current) ? current : people[0];
+    });
     setLoading(false);
   }
 
@@ -134,6 +151,21 @@ export function MemoryWorkspace({
         }
 
         return result.data.some((memory) => memory.id === current) ? current : result.data[0].id;
+      });
+      setSelectedPerson((current) => {
+        const people = Array.from(
+          new Set(
+            (result.data ?? [])
+              .map((memory) => memory.personName?.trim())
+              .filter((value): value is string => Boolean(value)),
+          ),
+        );
+
+        if (people.length === 0) {
+          return null;
+        }
+
+        return current && people.includes(current) ? current : people[0];
       });
       setLoading(false);
     }
@@ -198,6 +230,7 @@ export function MemoryWorkspace({
   function handleEdit(memory: MemoryRecord) {
     setEditingId(memory.id);
     setSelectedMemoryId(memory.id);
+    setSelectedPerson(memory.personName ?? null);
     setSubmitError(null);
     setSubmitSuccess(null);
     setFieldErrors({});
@@ -245,6 +278,29 @@ export function MemoryWorkspace({
     setSubmitSuccess(null);
     setFieldErrors({});
     setForm(initialFormState);
+  }
+
+  function handleTimelinePersonSelect(personName: string) {
+    setSelectedPerson(personName);
+    const firstMemory = memories
+      .filter((memory) => memory.personName === personName)
+      .sort((left, right) => {
+        const leftTime = left.dateOccurred ? Date.parse(left.dateOccurred) : Number.POSITIVE_INFINITY;
+        const rightTime = right.dateOccurred ? Date.parse(right.dateOccurred) : Number.POSITIVE_INFINITY;
+        return leftTime - rightTime;
+      })[0];
+
+    if (firstMemory) {
+      setSelectedMemoryId(firstMemory.id);
+    }
+  }
+
+  function handleTimelineMemorySelect(memoryId: string) {
+    const memory = memories.find((entry) => entry.id === memoryId);
+    if (memory?.personName) {
+      setSelectedPerson(memory.personName);
+    }
+    setSelectedMemoryId(memoryId);
   }
 
   function handleLayerSelect(layer: MemoryLayer | "ALL") {
@@ -565,6 +621,14 @@ export function MemoryWorkspace({
           </div>
         </form>
       </div>
+
+      <MemoryTimeline
+        memories={memories}
+        selectedPerson={selectedPerson}
+        selectedMemoryId={selectedMemoryId}
+        onSelectPerson={handleTimelinePersonSelect}
+        onSelectMemory={handleTimelineMemorySelect}
+      />
 
       <div className="glass-panel rounded-[2rem] p-6">
         <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-5">

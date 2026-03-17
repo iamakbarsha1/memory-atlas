@@ -100,6 +100,75 @@ describe("MemoryWorkspace", () => {
     });
   });
 
+  it("shows a person timeline and lets the user switch people", async () => {
+    const listMemories = vi.fn().mockResolvedValue({
+      data: [
+        {
+          id: "1",
+          title: "Birthplace",
+          description: "Madurai",
+          layer: "HISTORY",
+          type: "BIRTH",
+          latitude: 9.9252,
+          longitude: 78.1198,
+          dateOccurred: "1988-02-03T00:00:00.000Z",
+          personName: "Amina Khan",
+          visibility: "FAMILY",
+          status: "PUBLISHED",
+          sourceType: "FAMILY",
+          sourceName: "Family record",
+          sourceUrl: null,
+          sourceNotes: "Verified by family",
+          createdAt: "2026-03-17T10:00:00.000Z",
+          updatedAt: "2026-03-17T10:00:00.000Z",
+        },
+        {
+          id: "2",
+          title: "Burial Site",
+          description: "Dubai",
+          layer: "BURIAL",
+          type: "BURIAL",
+          latitude: 25.2048,
+          longitude: 55.2708,
+          dateOccurred: null,
+          personName: "Yusuf Khan",
+          visibility: "PRIVATE",
+          status: "DRAFT",
+          sourceType: "FAMILY",
+          sourceName: "Family record",
+          sourceUrl: null,
+          sourceNotes: "Section B",
+          createdAt: "2026-03-17T10:00:00.000Z",
+          updatedAt: "2026-03-17T10:00:00.000Z",
+        },
+      ],
+      error: null,
+    });
+    const createMemory = vi.fn();
+    const updateMemory = vi.fn();
+    const deleteMemory = vi.fn();
+
+    render(
+      <MemoryWorkspace
+        userId="user-123"
+        userName="Akbarsha"
+        memoryApi={{ listMemories, createMemory, updateMemory, deleteMemory }}
+      />,
+    );
+
+    await screen.findByRole("combobox", { name: /Timeline person/i });
+
+    fireEvent.change(screen.getByRole("combobox", { name: /Timeline person/i }), {
+      target: { value: "Yusuf Khan" },
+    });
+
+    expect(screen.getByRole("button", { name: /Open timeline memory Burial Site/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Open timeline memory Burial Site/i }));
+
+    expect(screen.getByRole("combobox", { name: /Timeline person/i })).toHaveValue("Yusuf Khan");
+  });
+
   it("submits a new record and refreshes the list", async () => {
     const listMemories = vi
       .fn()
