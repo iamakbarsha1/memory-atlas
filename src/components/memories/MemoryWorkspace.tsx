@@ -566,6 +566,15 @@ export function MemoryWorkspace({
               </button>
             ))}
           </div>
+          {browseFilters.placeName !== "ALL"
+            ? placeFacets
+                .filter((place) => place.placeName === browseFilters.placeName && place.aliases.length > 0)
+                .map((place) => (
+                  <div key={`${place.slug}-aliases`} className="mt-3 text-sm text-white/55">
+                    Includes alternate labels: {place.aliases.join(", ")}
+                  </div>
+                ))
+            : null}
         </div>
 
         <div className="mt-4 grid gap-4 md:grid-cols-3">

@@ -110,6 +110,11 @@ export function PlaceHubClient({
                 Canonical Place Hub
               </div>
               <h1 className="mt-3 text-4xl font-bold tracking-tight md:text-5xl">{hub.placeName}</h1>
+              {hub.aliases.length > 0 ? (
+                <div className="mt-3 text-sm text-white/55">
+                  Also includes: {hub.aliases.join(", ")}
+                </div>
+              ) : null}
               <p className="mt-4 max-w-2xl text-base leading-relaxed text-white/62">{hub.summary}</p>
               {loadError ? (
                 <div className="mt-4 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">

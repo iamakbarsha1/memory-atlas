@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { resolveCanonicalPlaceName } from "@/features/place-hubs/utils";
 import type {
   CreateMemoryInput,
   DatabaseMemoryRecord,
@@ -197,10 +198,6 @@ export function createMemoryRepository(client: SupabaseTableClient): MemoryRepos
 
       if (options?.layer) {
         query = query.eq("layer", options.layer);
-      }
-
-      if (options?.placeName) {
-        query = query.eq("place_name", options.placeName);
       }
 
       if (options?.status) {
@@ -473,7 +470,12 @@ function applyMemoryFilters(records: MemoryRecord[], options?: MemoryListFilters
     }
 
     if (options.placeName && record.placeName !== options.placeName) {
-      return false;
+      const canonicalRecordPlace = resolveCanonicalPlaceName(record.placeName);
+      const canonicalFilterPlace = resolveCanonicalPlaceName(options.placeName);
+
+      if (canonicalRecordPlace !== canonicalFilterPlace) {
+        return false;
+      }
     }
 
     if (options.status && record.status !== options.status) {

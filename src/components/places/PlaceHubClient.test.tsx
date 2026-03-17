@@ -22,7 +22,7 @@ describe("PlaceHubClient", () => {
           id: "1",
           title: "Family Home Registry",
           description: "Three generations lived nearby.",
-          placeName: "Chennai",
+          placeName: "Madras University Archive",
           layer: "HOME",
           type: "HOME",
           latitude: 13.0827,
@@ -90,6 +90,7 @@ describe("PlaceHubClient", () => {
 
     expect(await screen.findByRole("heading", { level: 1, name: /Chennai/i })).toBeInTheDocument();
     expect(screen.getByText(/Canonical Place Hub/i)).toBeInTheDocument();
+    expect(screen.getByText(/Also includes: Madras University Archive/i)).toBeInTheDocument();
     expect(screen.getByText("Partner Collections")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Madurai/i })).toBeInTheDocument();
   });

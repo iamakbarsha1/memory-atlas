@@ -126,11 +126,13 @@ describe("MemoryWorkspace", () => {
       .fn()
       .mockResolvedValueOnce({
         data: [
-          makeMemory(),
+          makeMemory({
+            placeName: "Madras",
+          }),
           makeMemory({
             id: "2",
             title: "University Years",
-            placeName: "Chennai",
+            placeName: "Madras University Archive",
             layer: "EDUCATION",
             type: "EDUCATION",
           }),
@@ -211,6 +213,40 @@ describe("MemoryWorkspace", () => {
         dateTo: undefined,
       });
     });
+  });
+
+  it("shows canonical place aliases in the active browse state", async () => {
+    const listMemories = vi.fn().mockResolvedValue({
+      data: [
+        makeMemory({
+          placeName: "Madras",
+        }),
+        makeMemory({
+          id: "2",
+          title: "University Years",
+          placeName: "Madras University Archive",
+          layer: "EDUCATION",
+          type: "EDUCATION",
+        }),
+      ],
+      error: null,
+    });
+    const createMemory = vi.fn();
+    const updateMemory = vi.fn();
+    const deleteMemory = vi.fn();
+
+    render(
+      <MemoryWorkspace
+        userId="user-123"
+        userName="Akbarsha"
+        memoryApi={{ listMemories, createMemory, updateMemory, deleteMemory }}
+      />,
+    );
+
+    await screen.findByRole("button", { name: /Place facet Chennai/i });
+    fireEvent.click(screen.getByRole("button", { name: /Place facet Chennai/i }));
+
+    expect(await screen.findByText(/Includes alternate labels: Madras, Madras University Archive/i)).toBeInTheDocument();
   });
 
   it("shows a person timeline and lets the user switch people", async () => {

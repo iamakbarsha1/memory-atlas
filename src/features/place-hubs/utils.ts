@@ -4,6 +4,7 @@ import { buildPartnerCollections, type PartnerCollection } from "@/features/part
 export type PlaceHub = {
   slug: string;
   placeName: string;
+  aliases: string[];
   summary: string;
   centroid: { latitude: number; longitude: number };
   totalRecords: number;
@@ -16,14 +17,36 @@ export type PlaceHub = {
 export type PlaceFacet = {
   slug: string;
   placeName: string;
+  aliases: string[];
   totalRecords: number;
 };
+
+const canonicalPlaceDefinitions = [
+  {
+    canonicalName: "Chennai",
+    aliases: [
+      "Madras",
+      "Madras University Archive",
+      "University of Madras",
+      "Chennai Family Archive",
+      "Chennai Port",
+    ],
+  },
+  {
+    canonicalName: "Madurai",
+    aliases: ["Madurai City Archives"],
+  },
+  {
+    canonicalName: "Dubai",
+    aliases: ["Dubai Creek", "Green Gardens Cemetery"],
+  },
+] as const;
 
 export function buildPlaceHubs(memories: MemoryRecord[]) {
   const grouped = new Map<string, MemoryRecord[]>();
 
   for (const memory of memories) {
-    const placeName = memory.placeName.trim();
+    const placeName = resolveCanonicalPlaceName(memory.placeName);
     const slug = slugifyPlaceName(placeName);
     const current = grouped.get(slug) ?? [];
     current.push(memory);
@@ -32,7 +55,14 @@ export function buildPlaceHubs(memories: MemoryRecord[]) {
 
   return Array.from(grouped.entries())
     .map<PlaceHub>(([slug, records]) => {
-      const placeName = records[0].placeName;
+      const placeName = resolveCanonicalPlaceName(records[0].placeName);
+      const aliases = Array.from(
+        new Set(
+          records
+            .map((record) => record.placeName.trim())
+            .filter((value) => value && value !== placeName),
+        ),
+      ).sort();
       const layers = Array.from(new Set(records.map((record) => record.layer))).sort();
       const peopleCount = new Set(
         records.map((record) => record.personName?.trim()).filter((value): value is string => Boolean(value)),
@@ -41,7 +71,8 @@ export function buildPlaceHubs(memories: MemoryRecord[]) {
       return {
         slug,
         placeName,
-        summary: buildPlaceSummary(placeName, records),
+        aliases,
+        summary: buildPlaceSummary(placeName, aliases, records),
         centroid: {
           latitude: average(records.map((record) => record.latitude)),
           longitude: average(records.map((record) => record.longitude)),
@@ -64,12 +95,13 @@ export function buildPlaceFacets(memories: MemoryRecord[]): PlaceFacet[] {
   return buildPlaceHubs(memories).map((hub) => ({
     slug: hub.slug,
     placeName: hub.placeName,
+    aliases: hub.aliases,
     totalRecords: hub.totalRecords,
   }));
 }
 
 export function slugifyPlaceName(placeName: string) {
-  return placeName
+  return resolveCanonicalPlaceName(placeName)
     .toLowerCase()
     .trim()
     .replaceAll(/[^a-z0-9]+/g, "-")
@@ -77,7 +109,41 @@ export function slugifyPlaceName(placeName: string) {
 }
 
 export function inferPlaceName(memory: MemoryRecord) {
-  return memory.placeName;
+  return resolveCanonicalPlaceName(memory.placeName);
+}
+
+export function resolveCanonicalPlaceName(placeName: string) {
+  const trimmedPlaceName = placeName.trim();
+
+  if (!trimmedPlaceName) {
+    return "Unknown place";
+  }
+
+  const normalizedPlaceName = normalizePlaceLookup(trimmedPlaceName);
+
+  for (const definition of canonicalPlaceDefinitions) {
+    const canonicalLookup = normalizePlaceLookup(definition.canonicalName);
+    const aliasLookups = definition.aliases.map(normalizePlaceLookup);
+
+    if (
+      normalizedPlaceName === canonicalLookup ||
+      aliasLookups.includes(normalizedPlaceName)
+    ) {
+      return definition.canonicalName;
+    }
+  }
+
+  for (const definition of canonicalPlaceDefinitions) {
+    const phrases = [definition.canonicalName, ...definition.aliases]
+      .map(normalizePlaceLookup)
+      .sort((left, right) => right.length - left.length);
+
+    if (phrases.some((phrase) => normalizedPlaceName.includes(phrase))) {
+      return definition.canonicalName;
+    }
+  }
+
+  return titleCasePlaceName(trimmedPlaceName);
 }
 
 export const demoPlaceMemories: MemoryRecord[] = [
@@ -211,7 +277,7 @@ export const demoPlaceMemories: MemoryRecord[] = [
   },
 ];
 
-function buildPlaceSummary(placeName: string, records: MemoryRecord[]) {
+function buildPlaceSummary(placeName: string, aliases: string[], records: MemoryRecord[]) {
   const layers = Array.from(new Set(records.map((record) => record.layer)));
   const partnerCount = new Set(
     records
@@ -219,7 +285,12 @@ function buildPlaceSummary(placeName: string, records: MemoryRecord[]) {
       .filter(Boolean),
   ).size;
 
-  return `${placeName} currently gathers ${records.length} mapped memories across ${layers.length} layers and ${partnerCount} partner collections in this atlas view.`;
+  const aliasSummary =
+    aliases.length > 0
+      ? ` It also absorbs ${aliases.length} alternate place labels.`
+      : "";
+
+  return `${placeName} currently gathers ${records.length} mapped memories across ${layers.length} layers and ${partnerCount} partner collections in this atlas view.${aliasSummary}`;
 }
 
 function average(values: number[]) {
@@ -228,4 +299,20 @@ function average(values: number[]) {
   }
 
   return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function normalizePlaceLookup(placeName: string) {
+  return placeName
+    .toLowerCase()
+    .trim()
+    .replaceAll(/[^a-z0-9]+/g, " ")
+    .replaceAll(/\s+/g, " ");
+}
+
+function titleCasePlaceName(placeName: string) {
+  return placeName
+    .trim()
+    .split(/\s+/)
+    .map((part) => (part ? `${part[0].toUpperCase()}${part.slice(1).toLowerCase()}` : part))
+    .join(" ");
 }

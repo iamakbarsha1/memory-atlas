@@ -228,6 +228,30 @@ describe("listMemoryRecords", () => {
     expect(result.data).toHaveLength(1);
     expect(result.data[0].placeName).toBe("Chennai");
   });
+
+  it("filters by canonical place name across aliases", async () => {
+    const aliasRepository: MemoryRepository = {
+      ...createRepository(),
+      listByUser: vi.fn().mockResolvedValue({
+        data: [{ ...dbRecord, place_name: "Madras University Archive" }],
+        error: null,
+      }),
+    };
+
+    const result = await listMemoryRecords(
+      "user-123",
+      {
+        placeName: "Chennai",
+      },
+      aliasRepository,
+    );
+
+    expect(aliasRepository.listByUser).toHaveBeenCalledWith("user-123", {
+      placeName: "Chennai",
+    });
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0].placeName).toBe("Madras University Archive");
+  });
 });
 
 describe("updateMemoryRecord", () => {
