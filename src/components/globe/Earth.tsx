@@ -1,6 +1,5 @@
 import { useRef } from "react";
-import { useFrame } from "@react-three/fiber";
-import { Sphere, MeshDistortMaterial, useTexture } from "@react-three/drei";
+import { Sphere } from "@react-three/drei";
 import * as THREE from "three";
 
 export function Earth() {

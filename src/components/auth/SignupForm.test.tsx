@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { SignupForm } from './SignupForm';
 import { supabase } from '@/lib/supabase';
-import { vi, describe, it, expect } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
 describe('SignupForm', () => {
   it('renders signup form', () => {
