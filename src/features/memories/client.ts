@@ -1,5 +1,10 @@
 import { supabase } from "@/lib/supabase";
-import type { CreateMemoryInput, MemoryLayer, MemoryRecord, UpdateMemoryInput } from "./types";
+import type {
+  CreateMemoryInput,
+  MemoryListFilters,
+  MemoryRecord,
+  UpdateMemoryInput,
+} from "./types";
 
 async function getAccessToken() {
   const { data } = await supabase.auth.getSession();
@@ -7,7 +12,7 @@ async function getAccessToken() {
 }
 
 export const memoryClientApi = {
-  async listMemories(userId: string, options?: { layer?: MemoryLayer }) {
+  async listMemories(userId: string, options?: MemoryListFilters) {
     void userId;
     const token = await getAccessToken();
 
@@ -15,7 +20,23 @@ export const memoryClientApi = {
       return { data: [], error: "Please sign in to view your memory records." };
     }
 
-    const query = options?.layer ? `?layer=${options.layer}` : "";
+    const params = new URLSearchParams();
+    if (options?.layer) {
+      params.set("layer", options.layer);
+    }
+    if (options?.status) {
+      params.set("status", options.status);
+    }
+    if (options?.query) {
+      params.set("query", options.query);
+    }
+    if (options?.dateFrom) {
+      params.set("dateFrom", options.dateFrom);
+    }
+    if (options?.dateTo) {
+      params.set("dateTo", options.dateTo);
+    }
+    const query = params.toString() ? `?${params.toString()}` : "";
     const response = await fetch(`/api/memories${query}`, {
       headers: {
         Authorization: `Bearer ${token}`,

@@ -43,6 +43,14 @@ export type MemoryRecord = {
   updatedAt: string;
 };
 
+export type MemoryListFilters = {
+  layer?: MemoryLayer;
+  status?: MemoryStatus;
+  query?: string;
+  dateFrom?: string;
+  dateTo?: string;
+};
+
 export type CreateMemoryInput = {
   title: string;
   description?: string;

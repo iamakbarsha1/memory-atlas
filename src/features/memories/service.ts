@@ -2,7 +2,7 @@ import { supabase } from "@/lib/supabase";
 import type {
   CreateMemoryInput,
   DatabaseMemoryRecord,
-  MemoryLayer,
+  MemoryListFilters,
   MemoryRecord,
   UpdateMemoryInput,
 } from "./types";
@@ -20,7 +20,7 @@ export type MemoryRepository = {
   create: (input: Record<string, unknown>) => RepositoryResult<DatabaseMemoryRecord>;
   listByUser: (
     userId: string,
-    options?: { layer?: MemoryLayer },
+    options?: MemoryListFilters,
   ) => RepositoryResult<DatabaseMemoryRecord[]>;
   update: (
     memoryId: string,
@@ -258,13 +258,14 @@ export async function createMemoryRecord(
 
 export async function listMemoryRecords(
   userId: string,
-  options?: { layer?: MemoryLayer },
+  options?: MemoryListFilters,
   repository: MemoryRepository = createSupabaseMemoryRepository(),
 ) {
   const result = await repository.listByUser(userId, options);
+  const records = result.data?.map(mapDatabaseRecord) ?? [];
 
   return {
-    data: result.data?.map(mapDatabaseRecord) ?? [],
+    data: applyMemoryFilters(records, options),
     error: result.error,
   };
 }
@@ -345,4 +346,59 @@ function mapDatabaseRecord(record: DatabaseMemoryRecord): MemoryRecord {
     createdAt: record.created_at,
     updatedAt: record.updated_at,
   };
+}
+
+function applyMemoryFilters(records: MemoryRecord[], options?: MemoryListFilters) {
+  if (!options) {
+    return records;
+  }
+
+  const normalizedQuery = options.query?.trim().toLowerCase();
+  const fromTime = options.dateFrom ? Date.parse(options.dateFrom) : null;
+  const toTime = options.dateTo ? Date.parse(options.dateTo) : null;
+
+  return records.filter((record) => {
+    if (options.layer && record.layer !== options.layer) {
+      return false;
+    }
+
+    if (options.status && record.status !== options.status) {
+      return false;
+    }
+
+    if (normalizedQuery) {
+      const haystack = [
+        record.title,
+        record.description,
+        record.personName,
+        record.sourceName,
+        record.sourceNotes,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      if (!haystack.includes(normalizedQuery)) {
+        return false;
+      }
+    }
+
+    if ((fromTime || toTime) && record.dateOccurred) {
+      const recordTime = Date.parse(record.dateOccurred);
+
+      if (fromTime && recordTime < fromTime) {
+        return false;
+      }
+
+      if (toTime && recordTime > toTime) {
+        return false;
+      }
+    }
+
+    if ((fromTime || toTime) && !record.dateOccurred) {
+      return false;
+    }
+
+    return true;
+  });
 }

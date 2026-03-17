@@ -137,6 +137,24 @@ describe("listMemoryRecords", () => {
     expect(result.data).toHaveLength(1);
     expect(result.data?.[0].layer).toBe("HOME");
   });
+
+  it("filters by query, status, and date range", async () => {
+    const repository = createRepository();
+
+    const result = await listMemoryRecords(
+      "user-123",
+      {
+        query: "amina",
+        status: "DRAFT",
+        dateFrom: "1990-01-01",
+        dateTo: "1995-01-01",
+      },
+      repository,
+    );
+
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0].title).toBe("Khan Family Home");
+  });
 });
 
 describe("updateMemoryRecord", () => {

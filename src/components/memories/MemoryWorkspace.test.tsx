@@ -49,7 +49,54 @@ describe("MemoryWorkspace", () => {
     fireEvent.click(screen.getByRole("button", { name: /^Home$/i }));
 
     await waitFor(() => {
-      expect(listMemories).toHaveBeenLastCalledWith("user-123", { layer: "HOME" });
+      expect(listMemories).toHaveBeenLastCalledWith("user-123", {
+        layer: "HOME",
+        status: undefined,
+        query: undefined,
+        dateFrom: undefined,
+        dateTo: undefined,
+      });
+    });
+  });
+
+  it("passes search and browse filters to the list API", async () => {
+    const listMemories = vi.fn().mockResolvedValue({
+      data: [],
+      error: null,
+    });
+    const createMemory = vi.fn();
+    const updateMemory = vi.fn();
+    const deleteMemory = vi.fn();
+
+    render(
+      <MemoryWorkspace
+        userId="user-123"
+        userName="Akbarsha"
+        memoryApi={{ listMemories, createMemory, updateMemory, deleteMemory }}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText(/Search memories/i), {
+      target: { value: "amina" },
+    });
+    fireEvent.change(screen.getByLabelText(/Browse status/i), {
+      target: { value: "DRAFT" },
+    });
+    fireEvent.change(screen.getByLabelText(/Date From Filter/i), {
+      target: { value: "1990-01-01" },
+    });
+    fireEvent.change(screen.getByLabelText(/Date To Filter/i), {
+      target: { value: "1995-01-01" },
+    });
+
+    await waitFor(() => {
+      expect(listMemories).toHaveBeenLastCalledWith("user-123", {
+        layer: undefined,
+        status: "DRAFT",
+        query: "amina",
+        dateFrom: "1990-01-01",
+        dateTo: "1995-01-01",
+      });
     });
   });
 

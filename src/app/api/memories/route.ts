@@ -55,6 +55,10 @@ export async function GET(request: NextRequest) {
     {
       authorizationHeader: request.headers.get("authorization"),
       layer: request.nextUrl.searchParams.get("layer"),
+      query: request.nextUrl.searchParams.get("query"),
+      status: request.nextUrl.searchParams.get("status"),
+      dateFrom: request.nextUrl.searchParams.get("dateFrom"),
+      dateTo: request.nextUrl.searchParams.get("dateTo"),
     },
     buildDeps(),
   );

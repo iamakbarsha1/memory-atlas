@@ -98,6 +98,30 @@ describe("listMemoriesForRequest", () => {
     });
     expect(result.status).toBe(200);
   });
+
+  it("passes search and browse filters through the list contract", async () => {
+    const deps = createDeps();
+
+    await listMemoriesForRequest(
+      {
+        authorizationHeader: "Bearer token-123",
+        layer: "HOME",
+        status: "DRAFT",
+        query: "amina",
+        dateFrom: "1990-01-01",
+        dateTo: "1995-01-01",
+      },
+      deps,
+    );
+
+    expect(deps.repository.listByUser).toHaveBeenCalledWith("user-123", {
+      layer: "HOME",
+      status: "DRAFT",
+      query: "amina",
+      dateFrom: "1990-01-01",
+      dateTo: "1995-01-01",
+    });
+  });
 });
 
 describe("createMemoryForRequest", () => {

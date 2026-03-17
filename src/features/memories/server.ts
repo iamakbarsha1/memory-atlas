@@ -5,7 +5,7 @@ import {
   updateMemoryRecord,
   type MemoryRepository,
 } from "./service";
-import type { CreateMemoryInput, MemoryLayer, UpdateMemoryInput } from "./types";
+import type { CreateMemoryInput, MemoryLayer, MemoryStatus, UpdateMemoryInput } from "./types";
 
 export type MemoryRequestDeps = {
   isConfigured: boolean;
@@ -25,6 +25,10 @@ export async function listMemoriesForRequest(
   request: {
     authorizationHeader?: string | null;
     layer?: string | null;
+    query?: string | null;
+    status?: string | null;
+    dateFrom?: string | null;
+    dateTo?: string | null;
   },
   deps: MemoryRequestDeps,
 ): Promise<RequestResponse> {
@@ -44,9 +48,16 @@ export async function listMemoriesForRequest(
   }
 
   const layer = coerceLayer(request.layer);
+  const status = coerceStatus(request.status);
   const result = await listMemoryRecords(
     auth.userId,
-    layer ? { layer } : undefined,
+    {
+      layer,
+      status,
+      query: request.query ?? undefined,
+      dateFrom: request.dateFrom ?? undefined,
+      dateTo: request.dateTo ?? undefined,
+    },
     deps.repository,
   );
 
@@ -279,6 +290,14 @@ function extractBearerToken(authorizationHeader: string | null | undefined) {
 function coerceLayer(layer: string | null | undefined): MemoryLayer | undefined {
   if (layer === "BURIAL" || layer === "HOME" || layer === "EDUCATION" || layer === "HISTORY") {
     return layer;
+  }
+
+  return undefined;
+}
+
+function coerceStatus(status: string | null | undefined): MemoryStatus | undefined {
+  if (status === "DRAFT" || status === "REVIEW" || status === "PUBLISHED" || status === "ARCHIVED") {
+    return status;
   }
 
   return undefined;

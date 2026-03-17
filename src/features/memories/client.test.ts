@@ -19,13 +19,22 @@ describe("memoryClientApi", () => {
       json: async () => ({ data: [], error: null }),
     });
 
-    await memoryClientApi.listMemories("ignored-user-id", { layer: "HOME" });
+    await memoryClientApi.listMemories("ignored-user-id", {
+      layer: "HOME",
+      status: "DRAFT",
+      query: "amina",
+      dateFrom: "1990-01-01",
+      dateTo: "1995-01-01",
+    });
 
-    expect(mockFetch).toHaveBeenCalledWith("/api/memories?layer=HOME", {
+    expect(mockFetch).toHaveBeenCalledWith(
+      "/api/memories?layer=HOME&status=DRAFT&query=amina&dateFrom=1990-01-01&dateTo=1995-01-01",
+      {
       headers: {
         Authorization: "Bearer token-123",
       },
-    });
+      },
+    );
   });
 
   it("returns an auth error when no session token is available", async () => {

@@ -13,6 +13,7 @@ import {
   memoryVisibilityValues,
   type CreateMemoryInput,
   type MemoryLayer,
+  type MemoryListFilters,
   type MemoryRecord,
   type UpdateMemoryInput,
 } from "@/features/memories/types";
@@ -23,7 +24,7 @@ type MemoryWorkspaceProps = {
   memoryApi?: {
     listMemories: (
       userId: string,
-      options?: { layer?: MemoryLayer },
+      options?: MemoryListFilters,
     ) => Promise<{ data: MemoryRecord[]; error: string | null }>;
     createMemory: (
       input: CreateMemoryInput,
@@ -75,15 +76,33 @@ export function MemoryWorkspace({
   const [form, setForm] = useState(initialFormState);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedMemoryId, setSelectedMemoryId] = useState<string | null>(null);
+  const [browseFilters, setBrowseFilters] = useState<{
+    query: string;
+    status: "ALL" | (typeof memoryStatusValues)[number];
+    dateFrom: string;
+    dateTo: string;
+  }>({
+    query: "",
+    status: "ALL",
+    dateFrom: "",
+    dateTo: "",
+  });
+
+  const activeListFilters = useMemo<MemoryListFilters>(() => {
+    return {
+      layer: selectedLayer === "ALL" ? undefined : selectedLayer,
+      status: browseFilters.status === "ALL" ? undefined : browseFilters.status,
+      query: browseFilters.query.trim() || undefined,
+      dateFrom: browseFilters.dateFrom || undefined,
+      dateTo: browseFilters.dateTo || undefined,
+    };
+  }, [browseFilters, selectedLayer]);
 
   async function refreshMemories() {
     setLoading(true);
     setLoadError(null);
 
-    const result = await memoryApi.listMemories(
-      userId,
-      selectedLayer === "ALL" ? undefined : { layer: selectedLayer },
-    );
+    const result = await memoryApi.listMemories(userId, activeListFilters);
 
     setMemories(result.data ?? []);
     setLoadError(result.error);
@@ -101,10 +120,7 @@ export function MemoryWorkspace({
     let isActive = true;
 
     async function load() {
-      const result = await memoryApi.listMemories(
-        userId,
-        selectedLayer === "ALL" ? undefined : { layer: selectedLayer },
-      );
+      const result = await memoryApi.listMemories(userId, activeListFilters);
 
       if (!isActive) {
         return;
@@ -127,7 +143,7 @@ export function MemoryWorkspace({
     return () => {
       isActive = false;
     };
-  }, [memoryApi, selectedLayer, userId]);
+  }, [activeListFilters, memoryApi, userId]);
 
   const layerSummary = useMemo(() => {
     return memoryLayerValues.map((layer) => ({
@@ -237,6 +253,18 @@ export function MemoryWorkspace({
     setSelectedLayer(layer);
   }
 
+  function handleBrowseFilterChange<K extends keyof typeof browseFilters>(
+    key: K,
+    value: (typeof browseFilters)[K],
+  ) {
+    setLoading(true);
+    setLoadError(null);
+    setBrowseFilters((current) => ({
+      ...current,
+      [key]: value,
+    }));
+  }
+
   function handleFieldChange<K extends keyof typeof form>(field: K, value: (typeof form)[K]) {
     setForm((current) => ({ ...current, [field]: value }));
     setFieldErrors((current) => {
@@ -270,6 +298,59 @@ export function MemoryWorkspace({
             <div className="font-semibold text-white">{memories.length}</div>
             <div>records loaded</div>
           </div>
+        </div>
+
+        <div className="mt-6 grid gap-4 rounded-[1.5rem] border border-white/10 bg-white/5 p-4 md:grid-cols-4">
+          <Field label="Search">
+            <input
+              aria-label="Search memories"
+              value={browseFilters.query}
+              onChange={(event) => handleBrowseFilterChange("query", event.target.value)}
+              className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none transition focus:border-primary"
+              placeholder="Person, place, source"
+            />
+          </Field>
+
+          <Field label="Status">
+            <select
+              aria-label="Browse status"
+              value={browseFilters.status}
+              onChange={(event) =>
+                handleBrowseFilterChange(
+                  "status",
+                  event.target.value as "ALL" | (typeof memoryStatusValues)[number],
+                )
+              }
+              className="w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-primary"
+            >
+              <option value="ALL">All statuses</option>
+              {memoryStatusValues.map((value) => (
+                <option key={value} value={value}>
+                  {value}
+                </option>
+              ))}
+            </select>
+          </Field>
+
+          <Field label="Date From">
+            <input
+              aria-label="Date From Filter"
+              type="date"
+              value={browseFilters.dateFrom}
+              onChange={(event) => handleBrowseFilterChange("dateFrom", event.target.value)}
+              className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none transition focus:border-primary"
+            />
+          </Field>
+
+          <Field label="Date To">
+            <input
+              aria-label="Date To Filter"
+              type="date"
+              value={browseFilters.dateTo}
+              onChange={(event) => handleBrowseFilterChange("dateTo", event.target.value)}
+              className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none transition focus:border-primary"
+            />
+          </Field>
         </div>
 
         <form className="mt-6 grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
