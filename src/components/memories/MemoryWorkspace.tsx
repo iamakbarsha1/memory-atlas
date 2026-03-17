@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Globe2, MapPinned, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { FamilyAtlas } from "@/components/memories/FamilyAtlas";
 import { MemoryMap } from "@/components/memories/MemoryMap";
 import { MemoryTimeline } from "@/components/memories/MemoryTimeline";
 import { memoryClientApi } from "@/features/memories/client";
@@ -629,6 +630,8 @@ export function MemoryWorkspace({
         onSelectPerson={handleTimelinePersonSelect}
         onSelectMemory={handleTimelineMemorySelect}
       />
+
+      <FamilyAtlas memories={memories} />
 
       <div className="glass-panel rounded-[2rem] p-6">
         <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-5">
